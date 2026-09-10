@@ -1,0 +1,376 @@
+import { db } from "./firebase-config.js";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  orderBy,
+  query,
+  runTransaction
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const IVA_TASA = 0.19;
+
+// ---------- Elementos: lista ----------
+const vistaLista = document.getElementById("cotizaciones-lista");
+const vistaEditor = document.getElementById("cotizaciones-editor");
+const tbody = document.getElementById("cotizaciones-tbody");
+const emptyState = document.getElementById("cotizaciones-empty");
+const searchInput = document.getElementById("cotizaciones-search");
+const btnNueva = document.getElementById("btn-nueva-cotizacion");
+const btnVolver = document.getElementById("btn-volver-lista");
+
+// ---------- Elementos: editor ----------
+const folioLabel = document.getElementById("editor-folio-label");
+const selectCliente = document.getElementById("cot-cliente");
+const inputObra = document.getElementById("cot-obra");
+const inputFecha = document.getElementById("cot-fecha");
+const inputVigencia = document.getElementById("cot-vigencia");
+const selectEstado = document.getElementById("cot-estado");
+const motivoWrap = document.getElementById("cot-motivo-wrap");
+const inputMotivo = document.getElementById("cot-motivo");
+const textareaObs = document.getElementById("cot-observaciones");
+
+const pickerItem = document.getElementById("picker-item");
+const pickerCantidad = document.getElementById("picker-cantidad");
+const btnAgregarItem = document.getElementById("btn-agregar-item");
+const itemsTbody = document.getElementById("cot-items-tbody");
+const itemsEmpty = document.getElementById("cot-items-empty");
+
+const inputDescuentoGlobal = document.getElementById("cot-descuento-global");
+const totNeto = document.getElementById("tot-neto");
+const totDescuento = document.getElementById("tot-descuento");
+const totIva = document.getElementById("tot-iva");
+const totTotal = document.getElementById("tot-total");
+const totMargen = document.getElementById("tot-margen");
+
+const btnCancelar = document.getElementById("btn-cancelar-cotizacion");
+const btnGuardar = document.getElementById("btn-guardar-cotizacion");
+
+// ---------- Estado local ----------
+let cotizaciones = [];
+let clientesActivos = [];
+let catalogoActivo = [];
+let editandoId = null;
+let editandoFolio = null;
+let lineaItems = []; // filas del editor: { itemId, codigo, descripcion, unidad, cantidad, precio, costo, descuentoItem }
+
+const formatoCLP = new Intl.NumberFormat("es-CL", {
+  style: "currency", currency: "CLP", maximumFractionDigits: 0
+});
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+const ESTADO_LABELS = {
+  borrador: "Borrador", enviada: "Enviada", en_revision: "En revisión",
+  aceptada: "Aceptada", no_aceptada: "No aceptada", vencida: "Vencida", anulada: "Anulada"
+};
+
+// ================= SUSCRIPCIONES =================
+
+onSnapshot(query(collection(db, "cotizaciones"), orderBy("folio", "desc")), (snap) => {
+  cotizaciones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  renderLista(cotizaciones);
+});
+
+onSnapshot(collection(db, "clientes"), (snap) => {
+  clientesActivos = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((c) => c.estado !== "inactivo");
+  poblarSelectClientes();
+});
+
+onSnapshot(collection(db, "catalogo"), (snap) => {
+  catalogoActivo = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((it) => it.estado !== "inactivo");
+  poblarSelectCatalogo();
+});
+
+function poblarSelectClientes() {
+  const seleccionado = selectCliente.value;
+  selectCliente.innerHTML = '<option value="">Selecciona un cliente…</option>' +
+    clientesActivos.map((c) => `<option value="${c.id}">${escapeHtml(c.razonSocial)} — ${escapeHtml(c.rut || "")}</option>`).join("");
+  if (seleccionado) selectCliente.value = seleccionado;
+}
+
+function poblarSelectCatalogo() {
+  pickerItem.innerHTML = '<option value="">Selecciona un ítem…</option>' +
+    catalogoActivo.map((it) => `<option value="${it.id}">${escapeHtml(it.codigo)} — ${escapeHtml(it.descripcion)}</option>`).join("");
+}
+
+// ================= LISTA =================
+
+function renderLista(lista) {
+  tbody.innerHTML = "";
+  if (lista.length === 0) {
+    emptyState.classList.remove("hidden");
+    return;
+  }
+  emptyState.classList.add("hidden");
+
+  lista.forEach((c) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="cell-mono">${c.folio ?? "—"}</td>
+      <td>${escapeHtml(c.clienteNombre || "—")}</td>
+      <td>${escapeHtml(c.fecha || "—")}</td>
+      <td>${escapeHtml(c.fechaVigencia || "—")}</td>
+      <td class="col-num cell-mono">${formatoCLP.format(c.total || 0)}</td>
+      <td><span class="badge badge-${c.estado || "borrador"}">${ESTADO_LABELS[c.estado] || c.estado}</span></td>
+      <td class="row-actions"><button data-id="${c.id}">Editar</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+searchInput.addEventListener("input", () => {
+  const term = searchInput.value.trim().toLowerCase();
+  if (!term) return renderLista(cotizaciones);
+  renderLista(cotizaciones.filter((c) =>
+    String(c.folio || "").includes(term) ||
+    (c.clienteNombre || "").toLowerCase().includes(term)
+  ));
+});
+
+tbody.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-id]");
+  if (!btn) return;
+  const cot = cotizaciones.find((c) => c.id === btn.dataset.id);
+  if (cot) abrirEditor(cot);
+});
+
+// ================= NAVEGACIÓN LISTA <-> EDITOR =================
+
+btnNueva.addEventListener("click", () => abrirEditor(null));
+btnVolver.addEventListener("click", cerrarEditor);
+btnCancelar.addEventListener("click", cerrarEditor);
+
+function cerrarEditor() {
+  vistaEditor.classList.add("hidden");
+  vistaLista.classList.remove("hidden");
+}
+
+function abrirEditor(cot) {
+  lineaItems = [];
+  editandoId = null;
+  editandoFolio = null;
+
+  if (cot) {
+    editandoId = cot.id;
+    editandoFolio = cot.folio;
+    folioLabel.textContent = `Cotización N° ${cot.folio}`;
+    selectCliente.value = cot.clienteId || "";
+    inputObra.value = cot.obraReferencia || "";
+    inputFecha.value = cot.fecha || "";
+    inputVigencia.value = cot.vigenciaDias || 15;
+    selectEstado.value = cot.estado || "borrador";
+    inputMotivo.value = cot.motivoNoAceptacion || "";
+    textareaObs.value = cot.observaciones || "";
+    inputDescuentoGlobal.value = cot.descuentoGlobal || 0;
+    lineaItems = (cot.items || []).map((it) => ({ ...it }));
+  } else {
+    folioLabel.textContent = "Nueva cotización (folio se asigna al guardar)";
+    selectCliente.value = "";
+    inputObra.value = "";
+    inputFecha.value = new Date().toISOString().slice(0, 10);
+    inputVigencia.value = 15;
+    selectEstado.value = "borrador";
+    inputMotivo.value = "";
+    textareaObs.value = "";
+    inputDescuentoGlobal.value = 0;
+  }
+
+  actualizarVisibilidadMotivo();
+  renderItems();
+  vistaLista.classList.add("hidden");
+  vistaEditor.classList.remove("hidden");
+}
+
+selectEstado.addEventListener("change", actualizarVisibilidadMotivo);
+function actualizarVisibilidadMotivo() {
+  motivoWrap.classList.toggle("hidden", selectEstado.value !== "no_aceptada");
+}
+
+// ================= ÍTEMS DEL EDITOR =================
+
+btnAgregarItem.addEventListener("click", () => {
+  const itemId = pickerItem.value;
+  const cantidad = Number(pickerCantidad.value) || 1;
+  if (!itemId) return;
+
+  const item = catalogoActivo.find((it) => it.id === itemId);
+  if (!item) return;
+
+  lineaItems.push({
+    itemId: item.id,
+    codigo: item.codigo,
+    descripcion: item.descripcion,
+    unidad: item.unidad,
+    cantidad,
+    precio: item.precio || 0,
+    costo: item.costo || 0,
+    descuentoItem: 0
+  });
+
+  pickerItem.value = "";
+  pickerCantidad.value = 1;
+  renderItems();
+});
+
+function renderItems() {
+  itemsTbody.innerHTML = "";
+
+  if (lineaItems.length === 0) {
+    itemsEmpty.classList.remove("hidden");
+  } else {
+    itemsEmpty.classList.add("hidden");
+  }
+
+  lineaItems.forEach((linea, idx) => {
+    const subtotal = linea.cantidad * linea.precio * (1 - (linea.descuentoItem || 0) / 100);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="cell-mono">${escapeHtml(linea.codigo)}</td>
+      <td>${escapeHtml(linea.descripcion)}</td>
+      <td class="col-num"><input type="number" class="row-qty-input" min="0" step="1" value="${linea.cantidad}" data-idx="${idx}" data-field="cantidad"></td>
+      <td class="col-num"><input type="number" class="row-price-input" min="0" step="1" value="${linea.precio}" data-idx="${idx}" data-field="precio"></td>
+      <td class="col-num"><input type="number" class="row-disc-input" min="0" max="100" step="1" value="${linea.descuentoItem || 0}" data-idx="${idx}" data-field="descuentoItem"></td>
+      <td class="col-num cell-mono">${formatoCLP.format(subtotal)}</td>
+      <td><button class="remove-row-btn" data-idx="${idx}" title="Quitar">×</button></td>
+    `;
+    itemsTbody.appendChild(tr);
+  });
+
+  recalcularTotales();
+}
+
+itemsTbody.addEventListener("input", (e) => {
+  const input = e.target.closest("input[data-idx]");
+  if (!input) return;
+  const idx = Number(input.dataset.idx);
+  const field = input.dataset.field;
+  lineaItems[idx][field] = Number(input.value) || 0;
+  recalcularSoloTotales(idx);
+});
+
+// Recalcula solo la celda de subtotal de la fila y los totales, sin re-renderizar toda la tabla (evita perder el foco)
+function recalcularSoloTotales(idx) {
+  const linea = lineaItems[idx];
+  const subtotal = linea.cantidad * linea.precio * (1 - (linea.descuentoItem || 0) / 100);
+  const row = itemsTbody.children[idx];
+  if (row) row.children[5].textContent = formatoCLP.format(subtotal);
+  recalcularTotales();
+}
+
+itemsTbody.addEventListener("click", (e) => {
+  const btn = e.target.closest(".remove-row-btn");
+  if (!btn) return;
+  lineaItems.splice(Number(btn.dataset.idx), 1);
+  renderItems();
+});
+
+inputDescuentoGlobal.addEventListener("input", recalcularTotales);
+
+function calcularTotales() {
+  const neto = lineaItems.reduce((sum, l) => sum + l.cantidad * l.precio * (1 - (l.descuentoItem || 0) / 100), 0);
+  const costoTotal = lineaItems.reduce((sum, l) => sum + l.cantidad * l.costo, 0);
+  const descuentoGlobalPct = Number(inputDescuentoGlobal.value) || 0;
+  const descuentoGlobalMonto = neto * (descuentoGlobalPct / 100);
+  const baseIva = neto - descuentoGlobalMonto;
+  const iva = baseIva * IVA_TASA;
+  const total = baseIva + iva;
+  const margenMonto = baseIva - costoTotal;
+  const margenPct = baseIva > 0 ? (margenMonto / baseIva) * 100 : 0;
+
+  return { neto, costoTotal, descuentoGlobalPct, descuentoGlobalMonto, baseIva, iva, total, margenMonto, margenPct };
+}
+
+function recalcularTotales() {
+  const t = calcularTotales();
+  totNeto.textContent = formatoCLP.format(t.neto);
+  totDescuento.textContent = formatoCLP.format(t.descuentoGlobalMonto);
+  totIva.textContent = formatoCLP.format(t.iva);
+  totTotal.textContent = formatoCLP.format(t.total);
+  totMargen.textContent = `${formatoCLP.format(t.margenMonto)} (${t.margenPct.toFixed(1)}%)`;
+}
+
+// ================= GUARDAR =================
+
+btnGuardar.addEventListener("click", async () => {
+  if (!selectCliente.value) {
+    alert("Selecciona un cliente antes de guardar.");
+    return;
+  }
+  if (lineaItems.length === 0) {
+    alert("Agrega al menos un ítem antes de guardar.");
+    return;
+  }
+
+  const cliente = clientesActivos.find((c) => c.id === selectCliente.value);
+  const t = calcularTotales();
+  const fecha = inputFecha.value || new Date().toISOString().slice(0, 10);
+  const vigenciaDias = Number(inputVigencia.value) || 15;
+  const fechaVigencia = sumarDias(fecha, vigenciaDias);
+
+  const data = {
+    clienteId: selectCliente.value,
+    clienteNombre: cliente ? cliente.razonSocial : "",
+    clienteRut: cliente ? cliente.rut : "",
+    obraReferencia: inputObra.value.trim(),
+    fecha,
+    vigenciaDias,
+    fechaVigencia,
+    items: lineaItems,
+    descuentoGlobal: t.descuentoGlobalPct,
+    neto: t.neto,
+    descuentoGlobalMonto: t.descuentoGlobalMonto,
+    baseIva: t.baseIva,
+    iva: t.iva,
+    total: t.total,
+    costoTotal: t.costoTotal,
+    margenMonto: t.margenMonto,
+    margenPorcentaje: t.margenPct,
+    estado: selectEstado.value,
+    motivoNoAceptacion: selectEstado.value === "no_aceptada" ? inputMotivo.value.trim() : "",
+    observaciones: textareaObs.value.trim(),
+    updatedAt: serverTimestamp()
+  };
+
+  try {
+    if (editandoId) {
+      await updateDoc(doc(db, "cotizaciones", editandoId), data);
+    } else {
+      data.folio = await obtenerSiguienteFolio();
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, "cotizaciones"), data);
+    }
+    cerrarEditor();
+  } catch (err) {
+    console.error("Error guardando cotización:", err);
+    alert("No se pudo guardar la cotización. Revisa la consola para más detalles.");
+  }
+});
+
+function sumarDias(fechaISO, dias) {
+  const d = new Date(fechaISO + "T00:00:00");
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+// Folio correlativo, asignado atómicamente con una transacción sobre un contador
+async function obtenerSiguienteFolio() {
+  const contadorRef = doc(db, "contadores", "cotizaciones");
+  const nuevoFolio = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(contadorRef);
+    const actual = snap.exists() ? (snap.data().ultimoFolio || 0) : 0;
+    const siguiente = actual + 1;
+    tx.set(contadorRef, { ultimoFolio: siguiente });
+    return siguiente;
+  });
+  return nuevoFolio;
+}
