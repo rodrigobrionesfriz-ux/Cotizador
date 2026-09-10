@@ -1,6 +1,7 @@
 import { db } from "./firebase-config.js";
 import { abrirNuevoClienteDesdeExterno } from "./clientes.js";
 import { abrirNuevoItemDesdeExterno } from "./catalogo.js";
+import { construirHtmlCotizacion } from "./plantilla.js";
 import {
   collection,
   addDoc,
@@ -552,97 +553,30 @@ function imprimirCotizacion() {
   const fecha = inputFecha.value || new Date().toISOString().slice(0, 10);
   const vigenciaDias = Number(inputVigencia.value) || 15;
   const fechaVigencia = sumarDias(fecha, vigenciaDias);
-  const folioTexto = editandoFolio ? formatoFolio(editandoFolio) : "BORRADOR (sin folio)";
 
-  const filasItems = lineaItems.map((it) => {
-    const totalNeto = it.cantidad * it.precio * (1 - (it.descuentoItem || 0) / 100);
-    return `
-      <tr>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE;">${escapeHtml(it.codigo || "")}</td>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE;">${escapeHtml(it.descripcion || "")}</td>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:center;">${escapeHtml(it.unidad || "—")}</td>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${it.cantidad}</td>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${formatoCLP.format(it.precio)}</td>
-        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${formatoCLP.format(totalNeto)}</td>
-      </tr>`;
-  }).join("");
-
-  const datosCliente = [
-    cliente.rut ? `<strong>RUT:</strong> ${escapeHtml(cliente.rut)}` : "",
-    cliente.giro ? `<strong>Giro:</strong> ${escapeHtml(cliente.giro)}` : "",
-    cliente.direccion ? `<strong>Dirección:</strong> ${escapeHtml(cliente.direccion)}` : "",
-    (cliente.comuna || cliente.region) ? `<strong>Comuna:</strong> ${escapeHtml([cliente.comuna, cliente.region].filter(Boolean).join(", "))}` : "",
-    cliente.contacto ? `<strong>Contacto:</strong> ${escapeHtml(cliente.contacto)}` : "",
-    cliente.telefono ? `<strong>Teléfono:</strong> ${escapeHtml(cliente.telefono)}` : "",
-    cliente.email ? `<strong>Email:</strong> ${escapeHtml(cliente.email)}` : ""
-  ].filter(Boolean).join(" &nbsp;·&nbsp; ");
-
-  const obraTexto = [
-    obraSel ? `<strong>Obra:</strong> ${escapeHtml(obraSel.nombre)}` : "",
-    inputObra.value.trim() ? `<strong>Referencia:</strong> ${escapeHtml(inputObra.value.trim())}` : ""
-  ].filter(Boolean).join(" &nbsp;·&nbsp; ");
+  const datos = {
+    folio: editandoFolio || null,
+    cliente,
+    obraNombre: obraSel ? obraSel.nombre : "",
+    obraReferencia: inputObra.value.trim(),
+    fecha,
+    vigenciaDias,
+    fechaVigencia,
+    items: lineaItems,
+    neto: t.neto,
+    descuentoPct: t.descuentoGlobalPct,
+    descuentoMonto: t.descuentoGlobalMonto,
+    iva: t.iva,
+    total: t.total,
+    observaciones: textareaObs.value.trim()
+  };
 
   const printArea = document.getElementById("cotizacion-print-area");
   // Limpia el área de proforma para que nunca se impriman ambas a la vez.
   const proformaArea = document.getElementById("proforma-print-area");
   if (proformaArea) proformaArea.innerHTML = "";
 
-  printArea.innerHTML = `
-    <div style="font-family: Arial, sans-serif; color:#1a1a1a; padding: 24px; max-width: 800px; margin: 0 auto;">
-
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1F2A38; padding-bottom:14px; margin-bottom:18px;">
-        <div>
-          ${empresaInfo.logoBase64 ? `<img src="${empresaInfo.logoBase64}" style="max-height:64px; margin-bottom:8px;">` : ""}
-          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "Empresa no configurada")}</div>
-          ${empresaInfo.rut ? `<div style="font-size:12px; color:#555;">RUT: ${escapeHtml(empresaInfo.rut)}</div>` : ""}
-          ${empresaInfo.giro ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.giro)}</div>` : ""}
-          ${empresaInfo.direccion ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.direccion)}</div>` : ""}
-          <div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.telefono || "")}${empresaInfo.email ? " · " + escapeHtml(empresaInfo.email) : ""}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:22px; font-weight:bold; letter-spacing:0.04em; color:#1F2A38;">COTIZACIÓN</div>
-          <div style="font-size:15px; font-weight:bold; color:#1D4ED8; margin-top:2px;">${folioTexto}</div>
-          <div style="font-size:12px; color:#555; margin-top:4px;">Fecha: ${formatoFecha(fecha)}</div>
-        </div>
-      </div>
-
-      <div style="background:#F4F5F7; border:1px solid #E2E5EA; border-radius:4px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; line-height:1.6;">
-        <div style="font-weight:bold; font-size:13px; margin-bottom:4px;">${escapeHtml(cliente.razonSocial || "")}</div>
-        ${datosCliente ? `<div style="color:#444;">${datosCliente}</div>` : ""}
-        ${obraTexto ? `<div style="color:#444; margin-top:4px;">${obraTexto}</div>` : ""}
-      </div>
-
-      <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px;">
-        <thead>
-          <tr style="background:#1F2A38; color:#fff; text-align:left;">
-            <th style="padding:7px 8px;">Código</th>
-            <th style="padding:7px 8px;">Descripción</th>
-            <th style="padding:7px 8px; text-align:center;">UM</th>
-            <th style="padding:7px 8px; text-align:right;">Cant.</th>
-            <th style="padding:7px 8px; text-align:right;">Precio unit.</th>
-            <th style="padding:7px 8px; text-align:right;">Total neto</th>
-          </tr>
-        </thead>
-        <tbody>${filasItems}</tbody>
-      </table>
-
-      <div style="display:flex; justify-content:flex-end;">
-        <table style="font-size:13px; width:280px;">
-          <tr><td style="padding:3px 0;">Neto</td><td style="text-align:right;">${formatoCLP.format(t.neto)}</td></tr>
-          ${t.descuentoGlobalMonto > 0 ? `<tr><td style="padding:3px 0;">Descuento (${t.descuentoGlobalPct}%)</td><td style="text-align:right;">- ${formatoCLP.format(t.descuentoGlobalMonto)}</td></tr>` : ""}
-          <tr><td style="padding:3px 0;">IVA (19%)</td><td style="text-align:right;">${formatoCLP.format(t.iva)}</td></tr>
-          <tr style="font-weight:bold; border-top:1px solid #1F2A38;"><td style="padding:6px 0;">Total</td><td style="text-align:right;">${formatoCLP.format(t.total)}</td></tr>
-        </table>
-      </div>
-
-      ${textareaObs.value.trim() ? `<div style="margin-top:18px; font-size:12px;"><strong>Observaciones:</strong><br>${escapeHtml(textareaObs.value.trim())}</div>` : ""}
-
-      <div style="margin-top:26px; font-size:12px; color:#333; border-top:1px solid #E2E5EA; padding-top:12px;">
-        Cotización válida por ${vigenciaDias} días, hasta el ${formatoFecha(fechaVigencia)}. Precios expresados en pesos chilenos (CLP). Valores netos, IVA incluido en el total.
-      </div>
-
-    </div>
-  `;
-
+  // El formato lo define la plantilla editable (Configuración → Formato de impresión).
+  printArea.innerHTML = construirHtmlCotizacion(datos);
   window.print();
 }

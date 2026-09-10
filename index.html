@@ -425,6 +425,65 @@
         <p id="empresa-guardado-msg" class="save-confirm hidden">Datos guardados.</p>
       </div>
 
+      <h4 class="section-label section-label-spaced">Formato de impresión de cotizaciones</h4>
+      <div class="config-card">
+        <p class="muted field-hint">Ajusta la plantilla del documento que se imprime o exporta a PDF. Usa "Vista previa" para verla con datos de ejemplo.</p>
+
+        <div class="form-row">
+          <label>Título del documento
+            <input type="text" id="pl-titulo" placeholder="COTIZACIÓN">
+          </label>
+          <label>Color principal
+            <input type="color" id="pl-color" value="#1F2A38">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Prefijo de folio
+            <input type="text" id="pl-folio-prefijo" placeholder="F-">
+          </label>
+          <label>Dígitos del folio
+            <input type="number" id="pl-folio-digitos" min="1" max="10" value="6">
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="checkbox-label"><input type="checkbox" id="pl-mostrar-logo"> Mostrar logo</label>
+          <label class="checkbox-label"><input type="checkbox" id="pl-mostrar-obs"> Mostrar observaciones</label>
+        </div>
+        <div class="form-row">
+          <label class="checkbox-label"><input type="checkbox" id="pl-col-codigo"> Columna Código</label>
+          <label class="checkbox-label"><input type="checkbox" id="pl-col-um"> Columna UM</label>
+        </div>
+        <div class="form-row">
+          <label class="checkbox-label"><input type="checkbox" id="pl-col-descuento"> Columna Descuento %</label>
+          <span></span>
+        </div>
+
+        <div class="form-row form-row-full">
+          <label>Texto de vigencia
+            <input type="text" id="pl-vigencia" placeholder="Cotización válida por {dias} días, hasta el {fecha}.">
+          </label>
+        </div>
+        <p class="muted field-hint">Puedes usar <strong>{dias}</strong> y <strong>{fecha}</strong>; se reemplazan por la vigencia real de cada cotización.</p>
+
+        <div class="form-row form-row-full">
+          <label>Nota al pie
+            <textarea id="pl-nota" rows="2" placeholder="Ej: Precios en pesos chilenos, valores netos."></textarea>
+          </label>
+        </div>
+        <div class="form-row form-row-full">
+          <label>Condiciones / términos
+            <textarea id="pl-condiciones" rows="3" placeholder="Ej: Forma de pago, plazo de entrega, garantía…"></textarea>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-preview-plantilla" type="button" class="btn btn-ghost">Vista previa</button>
+          <button id="btn-guardar-plantilla" type="button" class="btn btn-primary">Guardar formato</button>
+        </div>
+        <p id="plantilla-guardado-msg" class="save-confirm hidden">Formato guardado.</p>
+      </div>
+
       <h4 class="section-label section-label-spaced">Importar desde Excel</h4>
 
       <div class="config-card">
@@ -747,6 +806,7 @@
 <script type="module" src="js/resumen.js"></script>
 <script type="module" src="js/clientes.js"></script>
 <script type="module" src="js/catalogo.js"></script>
+<script type="module" src="js/plantilla.js"></script>
 <script type="module" src="js/cotizaciones.js"></script>
 <script type="module" src="js/obras.js"></script>
 <script type="module" src="js/facturacion.js"></script>

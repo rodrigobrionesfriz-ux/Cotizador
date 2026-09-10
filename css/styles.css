@@ -651,6 +651,22 @@ input:focus, select:focus {
   margin-bottom: 18px;
 }
 
+.config-card textarea {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  resize: vertical;
+  width: 100%;
+}
+
+.config-card input[type="color"] {
+  padding: 3px;
+  height: 38px;
+  cursor: pointer;
+}
+
 .config-logo-row {
   display: flex;
   align-items: center;

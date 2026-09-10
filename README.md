@@ -20,6 +20,7 @@ Cotizador/
     ├── auth.js             # Login / logout / estado de sesión
     ├── app.js              # Navegación entre módulos y menú móvil
     ├── resumen.js          # Indicadores del Resumen en tiempo real
+    ├── plantilla.js        # Plantilla editable de impresión + constructor del documento
     ├── clientes.js         # CRUD de clientes
     ├── catalogo.js         # CRUD de productos/servicios (incluye calculadora de costo HH)
     ├── cotizaciones.js     # Editor de cotizaciones, folio correlativo e impresión/PDF
@@ -92,8 +93,21 @@ Todo se actualiza en vivo vía `onSnapshot` sobre la colección `cotizaciones`.
 
 Cada tarjeta es **clicable**: abre un modal con la lista de cotizaciones que la componen (folio, cliente, fecha, estado y total). Desde ahí, el botón "Abrir" lleva la cotización a su editor. El detalle usa exactamente el mismo filtro que la tarjeta, así siempre coinciden.
 
+## Formato de impresión editable
+
+En Configuración → "Formato de impresión de cotizaciones" se ajusta la plantilla del documento (se guarda en `configuracion/plantillaCotizacion`):
+
+- Título del documento, prefijo y dígitos del folio, color principal.
+- Mostrar u ocultar: logo, observaciones, y las columnas Código, UM y Descuento %.
+- Texto de vigencia con marcadores `{dias}` y `{fecha}`.
+- Nota al pie y bloque de Condiciones / términos (texto libre).
+- Botón "Vista previa" que imprime el formato con datos de ejemplo.
+
+El constructor del documento vive en `plantilla.js` y lo usan tanto la impresión real (editor de cotizaciones) como la vista previa, así siempre coinciden. Si no hay plantilla guardada, se aplican valores por defecto.
+
 ## Cambios recientes
 
+- **Formato de impresión editable**: plantilla configurable para la cotización (título, folio, color, columnas, vigencia, nota al pie y condiciones) con vista previa.
 - **Estado editable**: selector de estado inline en el listado de cotizaciones (junto al botón Abrir) y también en el detalle que abre cada KPI del Resumen; el cambio se guarda al instante en Firestore.
 - Buscador de ítems del editor ensanchado (ocupa el espacio disponible).
 - KPI **Margen aceptadas**: utilidad total de las cotizaciones aceptadas; su detalle desglosa neto, costo, margen $ y margen % por cotización.
