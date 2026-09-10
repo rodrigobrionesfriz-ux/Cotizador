@@ -471,10 +471,33 @@ function aplicarBloque(b) {
   if (cont) cont.innerHTML = contenidoBloque(b, demo, estado.config, estado.empresa);
 }
 
+// Normaliza el layout para Firestore: garantiza campos definidos y elimina undefined
+function layoutLimpio() {
+  const L = estado.layout || defaultLayout();
+  const blocks = (L.blocks || []).map((b) => ({
+    id: b.id,
+    tipo: b.tipo,
+    x: Math.round(b.x) || 0,
+    y: Math.round(b.y) || 0,
+    w: Math.round(b.w) || 40,
+    h: Math.round(b.h) || 40,
+    estilo: {
+      fontFamily: b.estilo?.fontFamily || "Arial, sans-serif",
+      fontSize: Number(b.estilo?.fontSize) || 12,
+      color: b.estilo?.color || "#1a1a1a",
+      align: b.estilo?.align || "left",
+      bold: !!b.estilo?.bold,
+      italic: !!b.estilo?.italic
+    },
+    contenido: b.contenido || ""
+  }));
+  return { pageW: L.pageW || PAGE_W, pageH: L.pageH || PAGE_H, blocks };
+}
+
 async function guardar() {
   try {
     await setDoc(doc(db, "configuracion", "plantillaCotizacion"),
-      { usarLayout: true, layout: estado.layout }, { merge: true });
+      { usarLayout: true, layout: layoutLimpio() }, { merge: true });
     const btn = backdrop.querySelector("#pl-ed-save");
     const prev = btn.textContent;
     btn.textContent = "Guardado ✓";
