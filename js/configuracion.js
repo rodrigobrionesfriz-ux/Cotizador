@@ -50,13 +50,13 @@ const loginSub = document.getElementById("login-sub");
 const loginMark = document.getElementById("login-mark");
 
 onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
-  if (!snap.exists()) return;
-  const data = snap.data();
+  const data = snap.exists() ? snap.data() : {};
 
-  if (data.nombre) {
-    if (sidebarBrandSub) sidebarBrandSub.textContent = data.nombre;
-    if (loginSub) loginSub.textContent = data.nombre.toUpperCase();
-  }
+  // Sin nombre configurado, el login y el sidebar muestran "Empresa no configurada".
+  const nombreMarca = (data.nombre || "").trim() || "Empresa no configurada";
+  if (sidebarBrandSub) sidebarBrandSub.textContent = nombreMarca;
+  if (loginSub) loginSub.textContent = nombreMarca.toUpperCase();
+
   if (data.logoBase64) {
     const logoHtml = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
     if (sidebarBrandMark) sidebarBrandMark.innerHTML = logoHtml;

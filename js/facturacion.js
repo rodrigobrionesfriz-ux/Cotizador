@@ -133,7 +133,7 @@ function imprimirProforma(cot) {
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1F2A38; padding-bottom:14px; margin-bottom:20px;">
         <div>
           ${empresaInfo.logoBase64 ? `<img src="${empresaInfo.logoBase64}" style="max-height:60px; margin-bottom:8px;">` : ""}
-          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "")}</div>
+          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "Empresa no configurada")}</div>
           <div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.rut || "")}</div>
           <div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.direccion || "")}</div>
           <div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.telefono || "")} ${empresaInfo.email ? "· " + escapeHtml(empresaInfo.email) : ""}</div>

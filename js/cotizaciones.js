@@ -562,7 +562,7 @@ function imprimirCotizacion() {
       <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1F2A38; padding-bottom:14px; margin-bottom:18px;">
         <div>
           ${empresaInfo.logoBase64 ? `<img src="${empresaInfo.logoBase64}" style="max-height:64px; margin-bottom:8px;">` : ""}
-          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "")}</div>
+          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "Empresa no configurada")}</div>
           ${empresaInfo.rut ? `<div style="font-size:12px; color:#555;">RUT: ${escapeHtml(empresaInfo.rut)}</div>` : ""}
           ${empresaInfo.giro ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.giro)}</div>` : ""}
           ${empresaInfo.direccion ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.direccion)}</div>` : ""}
