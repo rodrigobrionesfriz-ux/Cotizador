@@ -429,6 +429,12 @@
       <div class="config-card">
         <p class="muted field-hint">Ajusta la plantilla del documento que se imprime o exporta a PDF. Usa "Vista previa" para verla con datos de ejemplo.</p>
 
+        <div class="pl-editor-launch">
+          <label class="checkbox-label"><input type="checkbox" id="pl-usar-layout"> Usar editor visual (arrastrar y soltar)</label>
+          <button id="btn-abrir-editor-plantilla" type="button" class="btn btn-ghost btn-small">Abrir editor visual</button>
+        </div>
+        <p class="muted field-hint">Con el editor visual activo, la impresión usa el diseño que armes arrastrando bloques. Si lo desactivas, se usa el formato por opciones de abajo.</p>
+
         <div class="form-row">
           <label>Título del documento
             <input type="text" id="pl-titulo" placeholder="COTIZACIÓN">
@@ -806,6 +812,7 @@
 <script type="module" src="js/resumen.js"></script>
 <script type="module" src="js/clientes.js"></script>
 <script type="module" src="js/catalogo.js"></script>
+<script type="module" src="js/plantilla-editor.js"></script>
 <script type="module" src="js/plantilla.js"></script>
 <script type="module" src="js/cotizaciones.js"></script>
 <script type="module" src="js/obras.js"></script>

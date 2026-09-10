@@ -1,6 +1,6 @@
 # Sistema de Cotizaciones — Electricidad y Obras Civiles
 
-Aplicación web que centraliza clientes, catálogo de productos/servicios, cotizaciones, obras y facturación para el área de electricidad y obras civiles.
+Aplicación web para **Sociedad Agrícola y Forestal La Cabaña Ltda.** que centraliza clientes, catálogo de productos/servicios, cotizaciones, obras y facturación para el área de electricidad y obras civiles.
 
 - **Hosting:** GitHub Pages → https://rodrigobrionesfriz-ux.github.io/Cotizador/
 - **Backend:** Firebase (Authentication + Firestore)
@@ -21,6 +21,7 @@ Cotizador/
     ├── app.js              # Navegación entre módulos y menú móvil
     ├── resumen.js          # Indicadores del Resumen en tiempo real
     ├── plantilla.js        # Plantilla editable de impresión + constructor del documento
+    ├── plantilla-editor.js # Editor visual (arrastrar/soltar) del formato de impresión
     ├── clientes.js         # CRUD de clientes
     ├── catalogo.js         # CRUD de productos/servicios (incluye calculadora de costo HH)
     ├── cotizaciones.js     # Editor de cotizaciones, folio correlativo e impresión/PDF
@@ -105,8 +106,13 @@ En Configuración → "Formato de impresión de cotizaciones" se ajusta la plant
 
 El constructor del documento vive en `plantilla.js` y lo usan tanto la impresión real (editor de cotizaciones) como la vista previa, así siempre coinciden. Si no hay plantilla guardada, se aplican valores por defecto.
 
+### Editor visual (arrastrar y soltar)
+
+Con "Usar editor visual" activo y el botón "Abrir editor visual", se abre un lienzo tamaño A4 donde cada elemento del documento es un bloque que se mueve y redimensiona libremente: Logo, Datos de la empresa, Título, Folio, Fecha, Ficha del cliente, Tabla de ítems, Totales, Observaciones, Condiciones, Vigencia y bloques de Texto libre (para "espacios de detalles"). Por bloque se ajusta fuente, tamaño, color, alineación y negrita/cursiva. El diseño se guarda en `configuracion/plantillaCotizacion` bajo `layout` con la bandera `usarLayout`. La impresión (`plantilla.js`) usa ese layout cuando `usarLayout` está activo; si no, usa el formato por opciones. Todo vive en `plantilla-editor.js`, que también aporta el renderizador del layout usado al imprimir.
+
 ## Cambios recientes
 
+- **Editor visual de la plantilla**: lienzo A4 con bloques que se arrastran, redimensionan y estilizan (fuente, tamaño, color, alineación); incluye bloques de texto libre. Se guarda como `layout` y la impresión lo respeta.
 - **Formato de impresión editable**: plantilla configurable para la cotización (título, folio, color, columnas, vigencia, nota al pie y condiciones) con vista previa.
 - **Estado editable**: selector de estado inline en el listado de cotizaciones (junto al botón Abrir) y también en el detalle que abre cada KPI del Resumen; el cambio se guarda al instante en Firestore.
 - Buscador de ítems del editor ensanchado (ocupa el espacio disponible).

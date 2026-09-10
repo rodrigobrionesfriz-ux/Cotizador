@@ -4,6 +4,7 @@ import {
   setDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { renderLayoutHtml, abrirEditorPlantilla } from "./plantilla-editor.js";
 
 // ================= PLANTILLA EDITABLE DE IMPRESIÓN DE COTIZACIONES =================
 // La configuración se guarda en configuracion/plantillaCotizacion y la comparte
@@ -21,7 +22,9 @@ const DEFAULTS = {
   mostrarObservaciones: true,
   textoVigencia: "Cotización válida por {dias} días, hasta el {fecha}. Precios en pesos chilenos (CLP), valores netos, IVA incluido en el total.",
   notaPie: "",
-  condiciones: ""
+  condiciones: "",
+  usarLayout: false,   // si está activo, la impresión usa el editor visual (layout)
+  layout: null
 };
 
 let plantillaActual = { ...DEFAULTS };
@@ -53,6 +56,11 @@ export function construirHtmlCotizacion(datos, plantilla = plantillaActual, empr
   const pl = { ...DEFAULTS, ...(plantilla || {}) };
   const emp = empresa || {};
   const color = pl.colorPrincipal || "#1F2A38";
+
+  // Si el usuario diseñó una plantilla en el editor visual, se usa ese layout.
+  if (pl.usarLayout && pl.layout && Array.isArray(pl.layout.blocks) && pl.layout.blocks.length) {
+    return renderLayoutHtml(datos, pl, emp);
+  }
 
   const cliente = datos.cliente || {};
   const folioTexto = formatoFolioPlantilla(datos.folio, pl.folioPrefijo, pl.folioDigitos);
@@ -162,10 +170,11 @@ const campos = {
   mostrarObservaciones: "pl-mostrar-obs",
   textoVigencia: "pl-vigencia",
   notaPie: "pl-nota",
-  condiciones: "pl-condiciones"
+  condiciones: "pl-condiciones",
+  usarLayout: "pl-usar-layout"
 };
 
-const checks = ["mostrarLogo", "colCodigo", "colUM", "colDescuento", "mostrarObservaciones"];
+const checks = ["mostrarLogo", "colCodigo", "colUM", "colDescuento", "mostrarObservaciones", "usarLayout"];
 
 function llenarFormulario(p) {
   Object.entries(campos).forEach(([clave, id]) => {
@@ -178,6 +187,7 @@ function llenarFormulario(p) {
 
 function leerFormulario() {
   const p = { ...DEFAULTS };
+  delete p.layout; // el layout lo administra el editor visual; no se toca desde el formulario simple
   Object.entries(campos).forEach(([clave, id]) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -240,6 +250,15 @@ if (btnPreview) {
     // Usa los valores actuales del formulario (permite previsualizar cambios sin guardar)
     printArea.innerHTML = construirHtmlCotizacion(datosDemo(), leerFormulario());
     window.print();
+  });
+}
+
+const btnAbrirEditor = document.getElementById("btn-abrir-editor-plantilla");
+if (btnAbrirEditor) {
+  btnAbrirEditor.addEventListener("click", () => {
+    // Pasa la config actual (valores del formulario) + el layout guardado + la empresa
+    const cfg = { ...plantillaActual, ...leerFormulario() };
+    abrirEditorPlantilla(cfg, empresaActual);
   });
 }
 
