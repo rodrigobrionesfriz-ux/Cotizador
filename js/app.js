@@ -6,7 +6,7 @@ const menuToggle = document.getElementById("menu-toggle");
 const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
 const titles = {
-  dashboard: "Dashboard",
+  dashboard: "Resumen",
   clientes: "Clientes",
   catalogo: "Catálogo",
   cotizaciones: "Cotizaciones",

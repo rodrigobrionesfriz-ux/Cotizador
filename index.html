@@ -47,7 +47,7 @@
     <div class="nav-section-label">Módulos</div>
     <nav class="nav">
       <button class="nav-item active" data-view="dashboard">
-        <span class="nav-icon">▦</span> Dashboard
+        <span class="nav-icon">▦</span> Resumen
       </button>
       <button class="nav-item" data-view="clientes">
         <span class="nav-icon">◧</span> Clientes
@@ -79,7 +79,7 @@
 
     <header class="topbar">
       <button id="menu-toggle" class="menu-toggle">☰</button>
-      <h2 id="view-title">Dashboard</h2>
+      <h2 id="view-title">Resumen</h2>
     </header>
 
     <!-- DASHBOARD -->
@@ -87,19 +87,19 @@
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-label">Cotizaciones activas</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="stat-activas">—</div>
         </div>
         <div class="stat-card accent-amber">
           <div class="stat-label">Pendientes de respuesta</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="stat-pendientes">—</div>
         </div>
         <div class="stat-card accent-green">
           <div class="stat-label">Aceptadas del mes</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="stat-aceptadas-mes">—</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Por cobrar</div>
-          <div class="stat-value">—</div>
+          <div class="stat-value" id="stat-por-cobrar">—</div>
         </div>
       </div>
     </section>
@@ -718,6 +718,7 @@
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/app.js"></script>
+<script type="module" src="js/resumen.js"></script>
 <script type="module" src="js/clientes.js"></script>
 <script type="module" src="js/catalogo.js"></script>
 <script type="module" src="js/cotizaciones.js"></script>

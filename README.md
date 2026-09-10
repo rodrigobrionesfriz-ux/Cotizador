@@ -19,6 +19,7 @@ Cotizador/
     ├── firebase-config.js  # Inicialización de Firebase (auth + db)
     ├── auth.js             # Login / logout / estado de sesión
     ├── app.js              # Navegación entre módulos y menú móvil
+    ├── resumen.js          # Indicadores del Resumen en tiempo real
     ├── clientes.js         # CRUD de clientes
     ├── catalogo.js         # CRUD de productos/servicios (incluye calculadora de costo HH)
     ├── cotizaciones.js     # Editor de cotizaciones, folio correlativo e impresión/PDF
@@ -35,7 +36,7 @@ Cada módulo JS se carga como `type="module"` y se suscribe en tiempo real a su 
 
 | Módulo | Estado | Descripción |
 |---|---|---|
-| **Dashboard** | Placeholder | Tarjetas de indicadores aún sin datos reales (pendiente). |
+| **Resumen** | Completo | Cuatro tarjetas alimentadas en tiempo real desde Firestore: cotizaciones activas, pendientes de respuesta, aceptadas del mes y monto por cobrar. |
 | **Clientes** | Completo | Alta/edición, búsqueda por nombre o RUT, importación desde Excel. |
 | **Catálogo** | Completo | Material, equipo, mano de obra y servicio. Unidad de medida (UM), costo, precio, afecto a IVA. Calculadora de costo HH para mano de obra. Importación desde Excel. |
 | **Cotizaciones** | Completo | Editor con selector de cliente e ítems buscables, descuento por ítem y global, cálculo de neto/IVA/total y margen estimado. Folio correlativo único. Impresión / PDF. |
@@ -79,13 +80,22 @@ Usa el diálogo de impresión del navegador, donde se puede elegir impresora o *
 
 ---
 
+## Resumen — cómo se calcula cada tarjeta
+
+- **Cotizaciones activas:** estado `borrador`, `enviada` o `en_revision`.
+- **Pendientes de respuesta:** estado `enviada` o `en_revision`.
+- **Aceptadas del mes:** estado `aceptada` cuya `fecha` cae en el mes calendario actual.
+- **Por cobrar:** suma del `total` de las cotizaciones `aceptada` cuya factura aún no está pagada (incluye aceptadas sin factura registrada).
+
+Todo se actualiza en vivo vía `onSnapshot` sobre la colección `cotizaciones`.
+
 ## Cambios recientes
 
+- Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real.
 - Columna **UM** (unidad de medida del catálogo) en el detalle del editor de cotizaciones.
 - Botón **Imprimir / PDF** con formato de cotización membretado (empresa, cliente, folio `F-000001`, detalle con UM, resumen neto/IVA/total y vigencia).
 - Folio mostrado en formato `F-000001` en lista, editor e impresión.
 
 ## Próximos pasos sugeridos
 
-- Poblar el **Dashboard** con indicadores reales (cotizaciones activas, pendientes, aceptadas del mes, por cobrar).
 - Flujo de datos completo del sistema en PDF (documentación).
