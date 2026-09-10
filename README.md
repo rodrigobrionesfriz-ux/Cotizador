@@ -86,6 +86,7 @@ Usa el diálogo de impresión del navegador, donde se puede elegir impresora o *
 - **Pendientes de respuesta:** estado `enviada` o `en_revision`.
 - **Aceptadas del mes:** estado `aceptada` cuya `fecha` cae en el mes calendario actual.
 - **Por cobrar:** suma del `total` de las cotizaciones `aceptada` cuya factura aún no está pagada (incluye aceptadas sin factura registrada).
+- **Margen aceptadas:** utilidad estimada (neto tras descuento menos costo) sumada sobre las cotizaciones `aceptada`. Su detalle muestra por cada cotización: neto, costo, margen $ y margen %.
 
 Todo se actualiza en vivo vía `onSnapshot` sobre la colección `cotizaciones`.
 
@@ -93,7 +94,8 @@ Cada tarjeta es **clicable**: abre un modal con la lista de cotizaciones que la 
 
 ## Cambios recientes
 
-- Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real. Tarjetas clicables que abren el detalle de cada indicador y permiten saltar a cada cotización.
+- KPI **Margen aceptadas**: utilidad total de las cotizaciones aceptadas; su detalle desglosa neto, costo, margen $ y margen % por cotización.
+- Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real. Tarjetas clicables que abren el detalle de cada indicador (columnas según la métrica) y permiten saltar a cada cotización.
 - Columna **UM** (unidad de medida del catálogo) en el detalle del editor de cotizaciones.
 - Botón **Imprimir / PDF** con formato de cotización membretado (empresa, cliente, folio `F-000001`, detalle con UM, resumen neto/IVA/total y vigencia).
 - Folio mostrado en formato `F-000001` en lista, editor e impresión.

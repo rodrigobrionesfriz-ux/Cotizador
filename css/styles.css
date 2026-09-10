@@ -272,7 +272,7 @@ input:focus, select:focus {
 /* ---------- DASHBOARD ---------- */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
   margin-bottom: 24px;
 }
@@ -403,6 +403,7 @@ input:focus, select:focus {
 }
 
 .modal-wide { width: 720px; }
+.table-scroll { overflow-x: auto; }
 
 .modal h3 {
   font-family: var(--font-display);
