@@ -89,6 +89,14 @@ const ESTADO_LABELS = {
   aceptada: "Aceptada", no_aceptada: "No aceptada", vencida: "Vencida", anulada: "Anulada"
 };
 
+// Selector de estado reutilizable (listado de cotizaciones)
+function selectEstadoHtml(id, estadoActual) {
+  const opciones = Object.entries(ESTADO_LABELS)
+    .map(([v, l]) => `<option value="${v}"${v === estadoActual ? " selected" : ""}>${l}</option>`)
+    .join("");
+  return `<select class="estado-select" data-estado-id="${id}" title="Cambiar estado">${opciones}</select>`;
+}
+
 // ================= SUSCRIPCIONES =================
 
 window.addEventListener("auth-ready", () => {
@@ -236,7 +244,10 @@ function renderLista(lista) {
       <td>${escapeHtml(c.fechaVigencia || "—")}</td>
       <td class="col-num cell-mono">${formatoCLP.format(c.total || 0)}</td>
       <td><span class="badge badge-${c.estado || "borrador"}">${ESTADO_LABELS[c.estado] || c.estado}</span></td>
-      <td class="row-actions"><button data-id="${c.id}">Editar</button></td>
+      <td class="row-actions row-actions-estado">
+        ${selectEstadoHtml(c.id, c.estado || "borrador")}
+        <button data-id="${c.id}">Abrir</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -257,6 +268,26 @@ tbody.addEventListener("click", (e) => {
   const cot = cotizaciones.find((c) => c.id === btn.dataset.id);
   if (cot) abrirEditor(cot);
 });
+
+// Cambio de estado inline desde el listado
+tbody.addEventListener("change", (e) => {
+  const sel = e.target.closest("select[data-estado-id]");
+  if (!sel) return;
+  actualizarEstadoCotizacion(sel.dataset.estadoId, sel.value);
+});
+
+// Actualiza el estado de una cotización (usado por el listado y por el Resumen).
+export async function actualizarEstadoCotizacion(id, nuevoEstado) {
+  try {
+    await updateDoc(doc(db, "cotizaciones", id), {
+      estado: nuevoEstado,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Error cambiando el estado de la cotización:", err);
+    alert("No se pudo cambiar el estado. Revisa la consola para más detalles.");
+  }
+}
 
 // Abre una cotización en el editor desde otro módulo (p. ej. las tarjetas del Resumen).
 export function abrirCotizacionPorId(id) {

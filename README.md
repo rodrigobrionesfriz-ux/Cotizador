@@ -94,6 +94,8 @@ Cada tarjeta es **clicable**: abre un modal con la lista de cotizaciones que la 
 
 ## Cambios recientes
 
+- **Estado editable**: selector de estado inline en el listado de cotizaciones (junto al botón Abrir) y también en el detalle que abre cada KPI del Resumen; el cambio se guarda al instante en Firestore.
+- Buscador de ítems del editor ensanchado (ocupa el espacio disponible).
 - KPI **Margen aceptadas**: utilidad total de las cotizaciones aceptadas; su detalle desglosa neto, costo, margen $ y margen % por cotización.
 - Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real. Tarjetas clicables que abren el detalle de cada indicador (columnas según la métrica) y permiten saltar a cada cotización.
 - Columna **UM** (unidad de medida del catálogo) en el detalle del editor de cotizaciones.

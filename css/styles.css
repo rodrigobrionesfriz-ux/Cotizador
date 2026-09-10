@@ -361,6 +361,21 @@ input:focus, select:focus {
 .badge-activo { background: #E7F0EA; color: var(--green); }
 .badge-inactivo { background: #F1E4DE; color: var(--red); }
 
+.estado-select {
+  font-size: 12px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  max-width: 150px;
+  vertical-align: middle;
+}
+
+.row-actions-estado {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .row-actions { text-align: right; }
 .row-actions button {
   background: none;
@@ -487,7 +502,9 @@ input:focus, select:focus {
 }
 
 .item-picker select { flex: 1; }
-.item-picker input { width: 90px; }
+.item-picker .combo-wrap-flex { flex: 1; }
+.item-picker .combo-input { width: 100%; }
+#picker-cantidad { width: 90px; flex: 0 0 auto; }
 
 .row-qty-input, .row-price-input, .row-cost-input, .row-disc-input {
   width: 100%;
@@ -703,7 +720,7 @@ input:focus, select:focus {
   .form-row { grid-template-columns: 1fr; }
   .editor-grid { grid-template-columns: 1fr; }
   .item-picker { flex-direction: column; }
-  .item-picker input { width: 100%; }
+  .item-picker input, #picker-cantidad { width: 100%; }
   .totals-panel { flex-direction: column; }
   .config-logo-row { flex-direction: column; align-items: flex-start; }
 }

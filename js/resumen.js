@@ -3,7 +3,7 @@ import {
   collection,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { abrirCotizacionPorId } from "./cotizaciones.js";
+import { abrirCotizacionPorId, actualizarEstadoCotizacion } from "./cotizaciones.js";
 
 // ================= RESUMEN (antes "Dashboard") =================
 // Suscripción en tiempo real a las cotizaciones para alimentar las tarjetas.
@@ -40,6 +40,13 @@ function formatoFolio(n) {
   return n || n === 0 ? "F-" + String(n).padStart(6, "0") : "—";
 }
 
+function selectEstadoHtml(id, estadoActual) {
+  const opciones = Object.entries(ESTADO_LABELS)
+    .map(([v, l]) => `<option value="${v}"${v === estadoActual ? " selected" : ""}>${l}</option>`)
+    .join("");
+  return `<select class="estado-select" data-estado-id="${id}" title="Cambiar estado">${opciones}</select>`;
+}
+
 function formatoFecha(iso) {
   if (!iso) return "—";
   const p = String(iso).split("-");
@@ -73,7 +80,7 @@ const COLS_ESTANDAR = [
   { th: "Folio", cell: (c) => `<span class="cell-mono">${formatoFolio(c.folio)}</span>` },
   { th: "Cliente", cell: (c) => escapeHtml(c.clienteNombre || "—") },
   { th: "Fecha", cell: (c) => formatoFecha(c.fecha) },
-  { th: "Estado", cell: (c) => `<span class="badge badge-${c.estado || "borrador"}">${ESTADO_LABELS[c.estado] || c.estado}</span>` },
+  { th: "Estado", cell: (c) => selectEstadoHtml(c.id, c.estado || "borrador") },
   { th: "Total", num: true, cell: (c) => `<span class="cell-mono">${formatoCLP.format(c.total || 0)}</span>` },
   COL_ABRIR
 ];
@@ -225,6 +232,13 @@ detalleTabla.addEventListener("click", (e) => {
   if (!btn) return;
   cerrarDetalle();
   abrirCotizacionPorId(btn.dataset.abrirId);
+});
+
+// Cambio de estado inline dentro del detalle
+detalleTabla.addEventListener("change", (e) => {
+  const sel = e.target.closest("select[data-estado-id]");
+  if (!sel) return;
+  actualizarEstadoCotizacion(sel.dataset.estadoId, sel.value);
 });
 
 btnCerrarDetalle.addEventListener("click", cerrarDetalle);
