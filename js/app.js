@@ -1,6 +1,9 @@
 const navItems = document.querySelectorAll(".nav-item");
 const views = document.querySelectorAll(".view");
 const viewTitle = document.getElementById("view-title");
+const sidebar = document.querySelector(".sidebar");
+const menuToggle = document.getElementById("menu-toggle");
+const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 
 const titles = {
   dashboard: "Dashboard",
@@ -10,6 +13,18 @@ const titles = {
   obras: "Obras",
   facturacion: "Facturación"
 };
+
+function closeMobileMenu() {
+  sidebar.classList.remove("open");
+  sidebarBackdrop.classList.remove("visible");
+}
+
+menuToggle.addEventListener("click", () => {
+  sidebar.classList.add("open");
+  sidebarBackdrop.classList.add("visible");
+});
+
+sidebarBackdrop.addEventListener("click", closeMobileMenu);
 
 navItems.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -22,5 +37,6 @@ navItems.forEach((btn) => {
     document.getElementById(`view-${target}`).classList.add("active");
 
     viewTitle.textContent = titles[target] || target;
+    closeMobileMenu();
   });
 });
