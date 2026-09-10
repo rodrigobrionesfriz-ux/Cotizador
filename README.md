@@ -137,6 +137,9 @@ Con "Usar editor visual" activo y el botón "Abrir editor visual", se abre un li
 
 ## Cambios recientes
 
+- Al cambiar de usuario la app se recarga sola para partir con permisos, módulo Administración y datos de la empresa correctos (antes había que limpiar caché).
+- La "Vista previa" del formato refleja el layout del editor visual guardado.
+- Administración permite **eliminar empresas** (borra sus subcolecciones y desasigna a sus usuarios).
 - **Acceso por empresa (multi-empresa)**: datos aislados por empresa bajo `empresas/{empresaId}/…`, módulo Administración para asignar usuarios, pantalla de "sin empresa" y reglas de Firestore (`firestore.rules`) que imponen el aislamiento.
 - **Editor visual de la plantilla**: lienzo A4 con bloques que se arrastran, redimensionan y estilizan (fuente, tamaño, color, alineación); incluye bloques de texto libre. Se guarda como `layout` y la impresión lo respeta.
 - **Formato de impresión editable**: plantilla configurable para la cotización (título, folio, color, columnas, vigencia, nota al pie y condiciones) con vista previa.

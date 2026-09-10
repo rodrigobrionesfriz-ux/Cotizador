@@ -4,6 +4,9 @@ import {
   doc,
   addDoc,
   updateDoc,
+  deleteDoc,
+  getDocs,
+  writeBatch,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -34,8 +37,45 @@ function nombreEmpresa(id) {
 function renderEmpresas() {
   if (!empresasTbody) return;
   empresasTbody.innerHTML = empresas.length
-    ? empresas.map((e) => `<tr><td>${escapeHtml(e.nombre || "")}</td><td class="cell-mono">${escapeHtml(e.id)}</td></tr>`).join("")
-    : `<tr><td colspan="2" class="muted">Aún no hay empresas.</td></tr>`;
+    ? empresas.map((e) => `
+        <tr>
+          <td>${escapeHtml(e.nombre || "")}</td>
+          <td class="cell-mono">${escapeHtml(e.id)}</td>
+          <td class="row-actions"><button data-eliminar="${e.id}" data-nombre="${escapeHtml(e.nombre || "")}">Eliminar</button></td>
+        </tr>`).join("")
+    : `<tr><td colspan="3" class="muted">Aún no hay empresas.</td></tr>`;
+}
+
+// Elimina una empresa: borra sus subcolecciones conocidas, desasigna a sus usuarios
+// y finalmente borra el documento de la empresa.
+async function eliminarEmpresa(id, nombre) {
+  const asignados = usuarios.filter((u) => u.empresaId === id);
+  const aviso = asignados.length
+    ? `\n\nAtención: ${asignados.length} usuario(s) quedarán sin empresa asignada.`
+    : "";
+  if (!confirm(`¿Eliminar la empresa "${nombre}" y TODOS sus datos (clientes, catálogo, cotizaciones, obras, configuración)? Esta acción no se puede deshacer.${aviso}`)) return;
+
+  const subcolecciones = ["clientes", "catalogo", "cotizaciones", "obras", "contadores", "configuracion"];
+  try {
+    for (const sub of subcolecciones) {
+      const snap = await getDocs(collection(db, "empresas", id, sub));
+      let lote = writeBatch(db);
+      let n = 0;
+      for (const d of snap.docs) {
+        lote.delete(d.ref);
+        if (++n >= 400) { await lote.commit(); lote = writeBatch(db); n = 0; }
+      }
+      if (n > 0) await lote.commit();
+    }
+    // Desasigna a los usuarios de esa empresa
+    for (const u of asignados) {
+      await updateDoc(doc(db, "usuarios", u.uid), { empresaId: null });
+    }
+    await deleteDoc(doc(db, "empresas", id));
+  } catch (err) {
+    console.error("Error eliminando la empresa:", err);
+    alert("No se pudo eliminar la empresa. Revisa la consola y las reglas de Firestore.");
+  }
 }
 
 function renderUsuarios() {
@@ -109,6 +149,13 @@ function iniciar() {
     usuariosTbody.addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-guardar]");
       if (btn) guardarUsuario(btn.dataset.guardar);
+    });
+  }
+
+  if (empresasTbody) {
+    empresasTbody.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-eliminar]");
+      if (btn) eliminarEmpresa(btn.dataset.eliminar, btn.dataset.nombre || "");
     });
   }
 }

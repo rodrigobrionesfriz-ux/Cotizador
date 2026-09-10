@@ -248,8 +248,10 @@ if (btnPreview) {
     const printArea = document.getElementById("cotizacion-print-area");
     const proformaArea = document.getElementById("proforma-print-area");
     if (proformaArea) proformaArea.innerHTML = "";
-    // Usa los valores actuales del formulario (permite previsualizar cambios sin guardar)
-    printArea.innerHTML = construirHtmlCotizacion(datosDemo(), leerFormulario());
+    // Combina los valores del formulario con la plantilla actual (incluye el layout
+    // guardado en el editor visual), así la previa refleja el diseño vigente.
+    const pl = { ...plantillaActual, ...leerFormulario() };
+    printArea.innerHTML = construirHtmlCotizacion(datosDemo(), pl);
     window.print();
   });
 }

@@ -71,7 +71,17 @@ async function crearEmpresaYAsignar(nombre) {
 }
 
 // ---------- Resolución al iniciar sesión ----------
+let uidPrevio; // undefined en la primera llamada
 onAuthStateChanged(auth, async (user) => {
+  const uid = user ? user.uid : null;
+  // Si cambia el usuario (login distinto o cierre de sesión), recargamos para
+  // partir con estado limpio: permisos, módulo Administración y datos de la empresa correcta.
+  if (uidPrevio !== undefined && uid !== uidPrevio) {
+    location.reload();
+    return;
+  }
+  uidPrevio = uid;
+
   if (!user) {
     empresaId = null; usuario = null; currentUser = null;
     ocultarGate();
