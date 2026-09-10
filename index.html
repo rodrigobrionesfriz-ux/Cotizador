@@ -224,6 +224,20 @@
   </div>
 </div>
 
+<div id="debug-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#B4432D; color:white; font-family:monospace; font-size:12px; padding:10px; z-index:9999; word-break:break-all;"></div>
+<script>
+  function showDebugError(msg) {
+    var banner = document.getElementById('debug-banner');
+    banner.style.display = 'block';
+    banner.textContent = 'Error: ' + msg;
+  }
+  window.addEventListener('error', function(e) {
+    showDebugError(e.message + ' (' + e.filename + ':' + e.lineno + ')');
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    showDebugError(e.reason && e.reason.message ? e.reason.message : String(e.reason));
+  });
+</script>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/app.js"></script>
