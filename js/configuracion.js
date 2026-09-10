@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  onSnapshot,
   collection,
   writeBatch
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -34,6 +35,23 @@ async function cargarEmpresa() {
   }
 }
 cargarEmpresa();
+
+// Mantiene el nombre y logo del sidebar sincronizados con lo guardado en Configuración,
+// en cualquier módulo en el que esté el usuario.
+const sidebarBrandSub = document.getElementById("sidebar-brand-sub");
+const sidebarBrandMark = document.getElementById("brand-mark");
+
+onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.data();
+
+  if (sidebarBrandSub && data.nombre) {
+    sidebarBrandSub.textContent = data.nombre;
+  }
+  if (sidebarBrandMark && data.logoBase64) {
+    sidebarBrandMark.innerHTML = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
+  }
+});
 
 function mostrarPreview(dataUrl) {
   logoPreview.src = dataUrl;
