@@ -47,21 +47,30 @@ Luego abre `http://localhost:8000` en el navegador.
 ## Qué incluye esta fase
 
 - Login con Firebase Authentication (correo/contraseña).
-- Navegación entre módulos (Dashboard, Clientes, Catálogo, Cotizaciones, Obras, Facturación), con menú deslizable en mobile.
-- Módulo **Clientes** completo: crear, editar, buscar por nombre/RUT, marcar activo/inactivo (no se elimina, se preserva historial según la regla de negocio del documento base).
-- Módulo **Catálogo** completo: crear, editar, buscar por código/descripción, categoría (material, equipo, mano de obra, servicio), costo y precio neto, afecto a IVA, y activo/inactivo (mismo criterio de no eliminar).
-- Módulo **Cotizaciones** completo: lista con búsqueda por folio/cliente, editor con selección de cliente y referencia de obra opcional, ítems tomados del catálogo (cantidad, precio y descuento editables por línea), descuento global, cálculo automático de neto, IVA 19%, total, costo total y margen estimado, folio correlativo automático (asignado de forma atómica), y estados (borrador, enviada, en revisión, aceptada, no aceptada con motivo, vencida, anulada).
-- Dashboard, Obras y Facturación quedan como vistas placeholder, listas para construirse en las siguientes fases.
+- Navegación entre módulos (Dashboard, Clientes, Catálogo, Cotizaciones, Obras, Facturación, Configuración), con menú deslizable en mobile.
+- Módulo **Clientes** completo: crear, editar, buscar por nombre/RUT, marcar activo/inactivo.
+- Módulo **Catálogo** completo: crear, editar, buscar por código/descripción, categoría, costo y precio neto, afecto a IVA, activo/inactivo.
+- Módulo **Cotizaciones** completo: lista, editor con cliente, obra (registrada u opcional en texto libre), ítems del catálogo, descuento global, cálculo de neto/IVA/total/margen, folio correlativo automático, y estados.
+- Módulo **Obras** completo: código, nombre, dirección, responsable, fecha de inicio, activa/cerrada. Se puede asociar a una cotización desde el editor.
+- Módulo **Facturación**: lista de cotizaciones aceptadas. Botón para generar una **proforma** (documento interno con folio propio, para enviar al contador y solicitar la emisión de la factura o boleta real) que se abre lista para imprimir/guardar como PDF desde el navegador. Una vez que el contador emite el documento tributario, se registra aquí (tipo, folio, fecha, neto, IVA, total y estado de pago).
+- Módulo **Configuración**:
+  - Datos de la empresa (nombre, RUT, giro, teléfono, email, dirección) y logo, que aparece en la proforma impresa. El logo se guarda como imagen redimensionada dentro del mismo documento de Firestore (sin necesidad de configurar Firebase Storage aparte).
+  - Importación masiva desde Excel para **Clientes** y **Catálogo**: sube un archivo .xlsx/.xls/.csv con encabezados razonablemente parecidos a los campos (el sistema reconoce variaciones comunes, ej. "Razón Social" o "Nombre", "RUT", "Costo" o "Costo Neto", etc.) y crea los registros en Firestore. Filas sin el dato mínimo requerido (razón social, o código+descripción) se omiten y se informa cuántas.
+- Dashboard sigue como placeholder, a la espera de indicadores reales.
+
+## La proforma no es un documento tributario
+
+El botón "Generar proforma" crea un documento interno (con su propio folio correlativo) pensado para enviarlo al contador externo y que él emita la factura o boleta real en el SII. La proforma se abre para imprimir/guardar como PDF usando la función nativa del navegador (no requiere librerías adicionales). El documento incluye una nota aclarando que no es válido ante el SII.
 
 ## Simplificación actual de Cotizaciones (a revisar en fase futura)
 
-- El IVA 19% se calcula sobre el neto total (después del descuento global), sin diferenciar ítems afectos/exentos individualmente. Si en la práctica manejas ítems exentos junto con afectos en la misma cotización, este cálculo se debe ajustar.
-- No hay todavía versionado de cotizaciones aceptadas (la regla de negocio del documento base indica que una cotización aceptada no debería modificarse libremente); por ahora se puede editar en cualquier estado.
-- No hay generación de PDF ni historial de auditoría por cambio de estado todavía.
+- El IVA 19% se calcula sobre el neto total (después del descuento global), sin diferenciar ítems afectos/exentos individualmente.
+- No hay todavía versionado de cotizaciones aceptadas (se puede editar en cualquier estado).
+- No hay historial de auditoría por cambio de estado todavía.
 
 ## Próximas fases sugeridas
 
-1. Generación de PDF de la cotización con el formato del documento base.
-2. Facturación asociada a cotización aceptada + control de pago.
-3. Dashboard con indicadores reales (conversión, pendientes, facturado, por cobrar).
-4. Historial de auditoría (quién y cuándo cambió cada estado).
+1. Dashboard con indicadores reales (conversión, pendientes, facturado, por cobrar) usando los datos de Cotizaciones y Facturación.
+2. PDF con diseño propio para la cotización (no solo la proforma).
+3. Historial de auditoría (quién y cuándo cambió cada estado).
+4. Permisos por rol (administrador, vendedor, supervisor, consulta).

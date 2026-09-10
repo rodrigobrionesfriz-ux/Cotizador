@@ -64,6 +64,9 @@
       <button class="nav-item" data-view="facturacion">
         <span class="nav-icon">▧</span> Facturación
       </button>
+      <button class="nav-item" data-view="configuracion">
+        <span class="nav-icon">⚙</span> Configuración
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -214,8 +217,13 @@
           <label>Cliente *
             <select id="cot-cliente" required></select>
           </label>
-          <label>Referencia de obra
+          <label>Referencia de obra (texto libre)
             <input type="text" id="cot-obra" placeholder="Opcional">
+          </label>
+          <label>Obra registrada (opcional)
+            <select id="cot-obra-id">
+              <option value="">— Sin obra —</option>
+            </select>
           </label>
           <label>Fecha
             <input type="date" id="cot-fecha">
@@ -295,20 +303,132 @@
 
     </section>
 
-    <!-- OBRAS (placeholder) -->
+    <!-- OBRAS -->
     <section id="view-obras" class="view">
-      <div class="empty-state">
-        <p>Módulo de Obras / Proyectos (opcional).</p>
-        <p class="muted">Se agrega si se necesita agrupar cotizaciones por obra.</p>
+      <div class="view-toolbar">
+        <input type="text" id="obras-search" class="search-input" placeholder="Buscar por código o nombre…">
+        <button id="btn-nueva-obra" class="btn btn-primary">+ Nueva obra</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Dirección</th>
+              <th>Responsable</th>
+              <th>Fecha inicio</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="obras-tbody"></tbody>
+        </table>
+        <div id="obras-empty" class="empty-state hidden">
+          <p>Aún no hay obras registradas.</p>
+          <p class="muted">Crea la primera con el botón “+ Nueva obra”.</p>
+        </div>
       </div>
     </section>
 
-    <!-- FACTURACIÓN (placeholder) -->
+    <!-- FACTURACIÓN -->
     <section id="view-facturacion" class="view">
-      <div class="empty-state">
-        <p>Módulo de Facturación.</p>
-        <p class="muted">Se conecta después de Cotizaciones (una cotización aceptada genera factura).</p>
+      <div class="view-toolbar">
+        <input type="text" id="facturacion-search" class="search-input" placeholder="Buscar por folio o cliente…">
       </div>
+      <p class="muted section-note">Cotizaciones aceptadas. Genera la proforma para enviar al contador y, cuando emita la factura real, regístrala aquí.</p>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Folio cot.</th>
+              <th>Cliente</th>
+              <th class="col-num">Total</th>
+              <th>Proforma</th>
+              <th>Factura</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="facturacion-tbody"></tbody>
+        </table>
+        <div id="facturacion-empty" class="empty-state hidden">
+          <p>Aún no hay cotizaciones aceptadas.</p>
+          <p class="muted">Cuando una cotización pase a estado “Aceptada”, aparecerá aquí.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACIÓN -->
+    <section id="view-configuracion" class="view">
+
+      <h4 class="section-label">Datos de la empresa</h4>
+      <div class="config-card">
+        <div class="config-logo-row">
+          <div class="logo-preview-wrap">
+            <img id="logo-preview" class="logo-preview hidden" alt="Logo de la empresa">
+            <span id="logo-preview-empty" class="logo-preview-empty">Sin logo</span>
+          </div>
+          <div>
+            <input type="file" id="empresa-logo-input" accept="image/*">
+            <p class="muted field-hint">PNG o JPG, idealmente menor a 500 KB.</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Nombre / Razón social
+            <input type="text" id="empresa-nombre">
+          </label>
+          <label>RUT
+            <input type="text" id="empresa-rut">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Giro
+            <input type="text" id="empresa-giro">
+          </label>
+          <label>Teléfono
+            <input type="text" id="empresa-telefono">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Email
+            <input type="email" id="empresa-email">
+          </label>
+          <label>Dirección
+            <input type="text" id="empresa-direccion">
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-guardar-empresa" type="button" class="btn btn-primary">Guardar datos de la empresa</button>
+        </div>
+        <p id="empresa-guardado-msg" class="save-confirm hidden">Datos guardados.</p>
+      </div>
+
+      <h4 class="section-label section-label-spaced">Importar desde Excel</h4>
+
+      <div class="config-card">
+        <h5 class="import-title">Clientes</h5>
+        <p class="muted field-hint">Columnas esperadas: RUT, Razón Social, Giro, Contacto, Teléfono, Email, Comuna, Región, Dirección.</p>
+        <div class="import-row">
+          <input type="file" id="import-clientes-file" accept=".xlsx,.xls,.csv">
+          <button id="btn-import-clientes" class="btn btn-ghost" type="button">Importar clientes</button>
+        </div>
+        <div id="import-clientes-log" class="import-log"></div>
+      </div>
+
+      <div class="config-card">
+        <h5 class="import-title">Catálogo</h5>
+        <p class="muted field-hint">Columnas esperadas: Código, Descripción, Categoría, Unidad, Proveedor, Costo, Precio, Afecto IVA, Estado.</p>
+        <div class="import-row">
+          <input type="file" id="import-catalogo-file" accept=".xlsx,.xls,.csv">
+          <button id="btn-import-catalogo" class="btn btn-ghost" type="button">Importar catálogo</button>
+        </div>
+        <div id="import-catalogo-log" class="import-log"></div>
+      </div>
+
     </section>
 
   </main>
@@ -453,11 +573,110 @@
   </div>
 </div>
 
+<!-- MODAL OBRA -->
+<div id="obra-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3 id="obra-modal-title">Nueva obra</h3>
+    <form id="obra-form">
+      <input type="hidden" id="obra-id">
+      <div class="form-row">
+        <label>Código *
+          <input type="text" id="obra-codigo" required>
+        </label>
+        <label>Estado
+          <select id="obra-estado">
+            <option value="activa">Activa</option>
+            <option value="cerrada">Cerrada</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row form-row-full">
+        <label>Nombre *
+          <input type="text" id="obra-nombre" required>
+        </label>
+      </div>
+      <div class="form-row form-row-full">
+        <label>Dirección
+          <input type="text" id="obra-direccion">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Responsable
+          <input type="text" id="obra-responsable">
+        </label>
+        <label>Fecha inicio
+          <input type="date" id="obra-fechaInicio">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-cancelar-obra" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar obra</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL FACTURA -->
+<div id="factura-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3>Registrar factura</h3>
+    <form id="factura-form">
+      <input type="hidden" id="factura-cotizacion-id">
+      <div class="form-row">
+        <label>Tipo de documento
+          <select id="factura-tipo">
+            <option value="factura">Factura</option>
+            <option value="boleta">Boleta</option>
+          </select>
+        </label>
+        <label>Folio *
+          <input type="text" id="factura-folio" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Fecha *
+          <input type="date" id="factura-fecha" required>
+        </label>
+        <label>Estado de pago
+          <select id="factura-estadoPago">
+            <option value="pendiente">Pendiente</option>
+            <option value="pagada">Pagada</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Neto
+          <input type="number" id="factura-neto" min="0" step="1">
+        </label>
+        <label>IVA
+          <input type="number" id="factura-iva" min="0" step="1">
+        </label>
+      </div>
+      <div class="form-row form-row-full">
+        <label>Total
+          <input type="number" id="factura-total" min="0" step="1">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-cancelar-factura" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar factura</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESIÓN: PROFORMA (solo visible al imprimir) -->
+<div id="proforma-print-area"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/clientes.js"></script>
 <script type="module" src="js/catalogo.js"></script>
 <script type="module" src="js/cotizaciones.js"></script>
+<script type="module" src="js/obras.js"></script>
+<script type="module" src="js/facturacion.js"></script>
+<script type="module" src="js/configuracion.js"></script>
 </body>
 </html>
