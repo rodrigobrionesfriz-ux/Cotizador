@@ -564,6 +564,42 @@ input:focus, select:focus {
 .badge-vencida { background: #F1E4DE; color: var(--text-muted); }
 .badge-anulada { background: #ECECEA; color: var(--text-muted); text-decoration: line-through; }
 
+/* ---------- COMBOBOX BUSCABLE ---------- */
+.combo-wrap { position: relative; }
+.combo-wrap-flex { flex: 1; }
+
+.combo-input { width: 100%; }
+
+.combo-add-link { margin-top: 6px; display: inline-block; font-size: 11.5px; }
+
+.combo-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 30;
+}
+
+.combo-option {
+  padding: 9px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.combo-option:hover { background: var(--paper); }
+
+.combo-empty {
+  padding: 9px 12px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
 /* ---------- CONFIGURACIÓN ---------- */
 .section-label-spaced { margin-top: 32px; }
 
