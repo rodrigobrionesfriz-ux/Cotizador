@@ -209,7 +209,28 @@ input:focus, select:focus {
 /* ---------- MAIN ---------- */
 .main { padding: 28px 36px; max-width: 1200px; }
 
-.topbar { margin-bottom: 24px; }
+.topbar { margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 18px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 37, 48, 0.5);
+  z-index: 40;
+}
+
+.sidebar-backdrop.visible { display: block; }
 
 .topbar h2 {
   font-family: var(--font-display);
@@ -371,7 +392,22 @@ input:focus, select:focus {
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  .menu-toggle { display: inline-block; }
+
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .form-row { grid-template-columns: 1fr; }
 }
