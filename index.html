@@ -255,6 +255,7 @@
                 <th>Descripción</th>
                 <th class="col-num">Cant.</th>
                 <th class="col-num">Precio unit.</th>
+                <th class="col-num">Costo</th>
                 <th class="col-num">Desc. %</th>
                 <th class="col-num">Subtotal</th>
                 <th></th>
@@ -417,7 +418,10 @@
 
       <div class="config-card">
         <h5 class="import-title">Clientes</h5>
-        <p class="muted field-hint">Columnas esperadas: RUT, Razón Social, Giro, Contacto, Teléfono, Email, Comuna, Región, Dirección.</p>
+        <p class="muted field-hint">Descarga la plantilla, complétala y súbela de vuelta. Columnas: RUT, Razón Social, Giro, Contacto, Teléfono, Email, Comuna, Región, Dirección, Estado.</p>
+        <div class="import-row">
+          <button id="btn-plantilla-clientes" class="btn btn-ghost btn-small" type="button">Descargar plantilla</button>
+        </div>
         <div class="import-row">
           <input type="file" id="import-clientes-file" accept=".xlsx,.xls,.csv">
           <button id="btn-import-clientes" class="btn btn-ghost" type="button">Importar clientes</button>
@@ -427,7 +431,10 @@
 
       <div class="config-card">
         <h5 class="import-title">Catálogo</h5>
-        <p class="muted field-hint">Columnas esperadas: Código, Descripción, Categoría, Unidad, Proveedor, Costo, Precio, Afecto IVA, Estado.</p>
+        <p class="muted field-hint">Descarga la plantilla, complétala y súbela de vuelta. Columnas: Código, Descripción, Categoría, Subcategoría (solo Mano de obra), Unidad, Proveedor, Costo, Precio, Afecto IVA, Estado.</p>
+        <div class="import-row">
+          <button id="btn-plantilla-catalogo" class="btn btn-ghost btn-small" type="button">Descargar plantilla</button>
+        </div>
         <div class="import-row">
           <input type="file" id="import-catalogo-file" accept=".xlsx,.xls,.csv">
           <button id="btn-import-catalogo" class="btn btn-ghost" type="button">Importar catálogo</button>
@@ -551,6 +558,36 @@
           <input type="text" id="item-proveedor">
         </label>
       </div>
+      <div class="form-row form-row-full" id="item-subcategoria-row" style="display:none;">
+        <label>Tipo de mano de obra *
+          <select id="item-subcategoria">
+            <option value="propia">Propia</option>
+            <option value="contratista">Contratista</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="item-calc-hh" class="calc-hh-box" style="display:none;">
+        <h5 class="import-title">Calculadora de costo HH</h5>
+        <p class="muted field-hint">Costo HH = Costo empresa mensual ÷ (JH mensuales × Horas por jornada). Se copia automáticamente al "Costo neto" de abajo, pero ese campo lo puedes editar igual — el cálculo es solo la referencia.</p>
+        <div class="form-row">
+          <label>Costo empresa mensual ($)
+            <input type="number" id="item-costoMensual" min="0" step="1">
+          </label>
+          <label>JH mensuales (jornadas)
+            <input type="number" id="item-jhMensuales" min="0" step="0.5">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Horas por jornada
+            <input type="number" id="item-horasPorJornada" min="0" step="0.5">
+          </label>
+          <label>Costo HH calculado
+            <input type="text" id="item-costoHHCalculado" readonly>
+          </label>
+        </div>
+      </div>
+
       <div class="form-row">
         <label>Costo neto ($) *
           <input type="number" id="item-costo" min="0" step="1" required>

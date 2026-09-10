@@ -48,6 +48,17 @@ Luego abre `http://localhost:8000` en el navegador.
 2. En el repositorio: **Settings → Pages → Source**, selecciona la rama `main` y carpeta `/root`.
 3. GitHub te entrega una URL tipo `https://tu-usuario.github.io/tu-repo/`.
 
+## Cálculo de costo HH para Mano de Obra
+
+Al crear o editar un ítem de Catálogo con categoría "Mano de obra", aparece:
+- **Tipo:** Propia o Contratista.
+- **Calculadora de costo HH**, con tres campos: Costo empresa mensual ($), JH mensuales (jornadas trabajadas al mes) y Horas por jornada.
+- El sistema calcula: **Costo HH = Costo empresa mensual ÷ (JH mensuales × Horas por jornada)**, y copia ese valor al campo "Costo neto" de abajo. Ese campo sigue siendo editable — si necesitas ajustarlo manualmente, el valor calculado es solo la referencia y no se vuelve a sobrescribir solo hasta que cambies alguno de los tres campos de la calculadora.
+
+**Revisa que esta fórmula sea la que usas en la práctica** — la interpreté a partir de la descripción, así que si el cálculo real es distinto (por ejemplo, si "JH mensuales" ya es el total de horas y no se debe multiplicar por horas por jornada), avísame y la ajusto.
+
+En el editor de Cotizaciones, cada línea de ítem ahora también muestra el **Costo** como columna editable (antes solo se guardaba internamente para el margen, sin poder ajustarlo). Se prellena con el costo del catálogo pero se puede cambiar por cotización sin afectar el catálogo.
+
 ## Qué incluye esta fase
 
 - Login con Firebase Authentication (correo/contraseña).
