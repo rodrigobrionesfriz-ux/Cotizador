@@ -1,6 +1,6 @@
 # Sistema de Cotizaciones — Electricidad y Obras Civiles
 
-Aplicación web para **Sociedad Agrícola y Forestal La Cabaña Ltda.** que centraliza clientes, catálogo de productos/servicios, cotizaciones, obras y facturación para el área de electricidad y obras civiles.
+Aplicación web que centraliza clientes, catálogo de productos/servicios, cotizaciones, obras y facturación para el área de electricidad y obras civiles.
 
 - **Hosting:** GitHub Pages → https://rodrigobrionesfriz-ux.github.io/Cotizador/
 - **Backend:** Firebase (Authentication + Firestore)
