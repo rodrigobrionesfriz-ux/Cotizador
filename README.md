@@ -1,91 +1,91 @@
-# Cotizaciones · Electricidad y Obras Civiles
+# Sistema de Cotizaciones — Electricidad y Obras Civiles
 
-App web para gestionar clientes, catálogo, cotizaciones y facturación.
-Fase 1: estructura base + módulo de **Clientes** funcional (CRUD en tiempo real con Firestore).
+Aplicación web para **Sociedad Agrícola y Forestal La Cabaña Ltda.** que centraliza clientes, catálogo de productos/servicios, cotizaciones, obras y facturación para el área de electricidad y obras civiles.
 
-## 1. Crear el proyecto en Firebase
+- **Hosting:** GitHub Pages → https://rodrigobrionesfriz-ux.github.io/Cotizador/
+- **Backend:** Firebase (Authentication + Firestore)
+- **Proyecto Firebase:** `cotizadoe-9c0d8` (app web "Cotizadorelec")
 
-1. Ve a https://console.firebase.google.com y crea un proyecto nuevo.
-2. En **Compilación → Authentication**, habilita el proveedor **Correo electrónico/Contraseña** y crea tu primer usuario (tú mismo) manualmente desde la pestaña "Users".
-3. En **Compilación → Firestore Database**, crea la base de datos (modo producción).
-4. En **Reglas** de Firestore, usa esto para partir (usuarios autenticados pueden leer/escribir todo; el documento de datos de la empresa además se puede leer sin sesión iniciada, para que el logo y el nombre se vean en la pantalla de login):
+---
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /configuracion/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-5. En **Configuración del proyecto → General → Tus apps**, agrega una app web y copia el objeto `firebaseConfig`.
-
-## 2. Configurar la app
-
-Abre `js/firebase-config.js` y reemplaza los valores de `firebaseConfig` con los que copiaste de Firebase.
-
-## 3. Probar en local
-
-No necesitas servidor especial, pero los módulos de JavaScript (`type="module"`) requieren que el archivo se sirva por HTTP, no abrirlo directo con doble clic. La forma más simple:
+## Estructura del proyecto
 
 ```
-cd app-cotizaciones
-python3 -m http.server 8000
+Cotizador/
+├── index.html              # Estructura de la app (login, sidebar, vistas, modales)
+├── css/
+│   └── styles.css          # Estilos + reglas de impresión (@media print)
+└── js/
+    ├── firebase-config.js  # Inicialización de Firebase (auth + db)
+    ├── auth.js             # Login / logout / estado de sesión
+    ├── app.js              # Navegación entre módulos y menú móvil
+    ├── clientes.js         # CRUD de clientes
+    ├── catalogo.js         # CRUD de productos/servicios (incluye calculadora de costo HH)
+    ├── cotizaciones.js     # Editor de cotizaciones, folio correlativo e impresión/PDF
+    ├── obras.js            # CRUD de obras
+    ├── facturacion.js      # Proforma para el contador + registro de factura/boleta
+    └── configuracion.js    # Datos de la empresa, logo e importación desde Excel
 ```
 
-Luego abre `http://localhost:8000` en el navegador.
+Cada módulo JS se carga como `type="module"` y se suscribe en tiempo real a su colección de Firestore mediante `onSnapshot`.
 
-## 4. Publicar en GitHub Pages
+---
 
-1. Crea un repositorio en GitHub y sube todo el contenido de esta carpeta.
-2. En el repositorio: **Settings → Pages → Source**, selecciona la rama `main` y carpeta `/root`.
-3. GitHub te entrega una URL tipo `https://tu-usuario.github.io/tu-repo/`.
+## Módulos
 
-## Cálculo de costo HH para Mano de Obra
+| Módulo | Estado | Descripción |
+|---|---|---|
+| **Dashboard** | Placeholder | Tarjetas de indicadores aún sin datos reales (pendiente). |
+| **Clientes** | Completo | Alta/edición, búsqueda por nombre o RUT, importación desde Excel. |
+| **Catálogo** | Completo | Material, equipo, mano de obra y servicio. Unidad de medida (UM), costo, precio, afecto a IVA. Calculadora de costo HH para mano de obra. Importación desde Excel. |
+| **Cotizaciones** | Completo | Editor con selector de cliente e ítems buscables, descuento por ítem y global, cálculo de neto/IVA/total y margen estimado. Folio correlativo único. Impresión / PDF. |
+| **Obras** | Completo | Registro de obras asociables a cotizaciones. |
+| **Facturación** | Completo | Lista de cotizaciones aceptadas, generación de proforma (uso interno) y registro de la factura/boleta real con estado de pago. |
+| **Configuración** | Completo | Datos de la empresa emisora, logo (se guarda en base64), plantillas e importación de clientes y catálogo desde Excel. |
 
-Al crear o editar un ítem de Catálogo con categoría "Mano de obra", aparece:
-- **Tipo:** Propia o Contratista.
-- **Calculadora de costo HH**, con tres campos: Costo empresa mensual ($), JH mensuales (jornadas trabajadas al mes) y Horas por jornada.
-- El sistema calcula: **Costo HH = Costo empresa mensual ÷ (JH mensuales × Horas por jornada)**, y copia ese valor al campo "Costo neto" de abajo. Ese campo sigue siendo editable — si necesitas ajustarlo manualmente, el valor calculado es solo la referencia y no se vuelve a sobrescribir solo hasta que cambies alguno de los tres campos de la calculadora.
+---
 
-**Revisa que esta fórmula sea la que usas en la práctica** — la interpreté a partir de la descripción, así que si el cálculo real es distinto (por ejemplo, si "JH mensuales" ya es el total de horas y no se debe multiplicar por horas por jornada), avísame y la ajusto.
+## Colecciones en Firestore
 
-En el editor de Cotizaciones, cada línea de ítem ahora también muestra el **Costo** como columna editable (antes solo se guardaba internamente para el margen, sin poder ajustarlo). Se prellena con el costo del catálogo pero se puede cambiar por cotización sin afectar el catálogo.
+- `clientes` — fichas de clientes.
+- `catalogo` — productos y servicios (campo `unidad` = UM).
+- `cotizaciones` — cotizaciones completas (incluye `items`, totales, estado, `folio`, y `factura`/`proformaFolio` cuando aplica).
+- `obras` — obras registradas.
+- `configuracion/empresa` — datos y logo de la empresa emisora.
+- `contadores/cotizaciones` y `contadores/proformas` — contadores atómicos de folio (transacción).
 
-## Qué incluye esta fase
+---
 
-- Login con Firebase Authentication (correo/contraseña).
-- Navegación entre módulos (Dashboard, Clientes, Catálogo, Cotizaciones, Obras, Facturación, Configuración), con menú deslizable en mobile.
-- Módulo **Clientes** completo: crear, editar, buscar por nombre/RUT, marcar activo/inactivo.
-- Módulo **Catálogo** completo: crear, editar, buscar por código/descripción, categoría, costo y precio neto, afecto a IVA, activo/inactivo.
-- Módulo **Cotizaciones** completo: lista, editor con cliente, obra (registrada u opcional en texto libre), ítems del catálogo, descuento global, cálculo de neto/IVA/total/margen, folio correlativo automático, y estados.
-- Módulo **Obras** completo: código, nombre, dirección, responsable, fecha de inicio, activa/cerrada. Se puede asociar a una cotización desde el editor.
-- Módulo **Facturación**: lista de cotizaciones aceptadas. Botón para generar una **proforma** (documento interno con folio propio, para enviar al contador y solicitar la emisión de la factura o boleta real) que se abre lista para imprimir/guardar como PDF desde el navegador. Una vez que el contador emite el documento tributario, se registra aquí (tipo, folio, fecha, neto, IVA, total y estado de pago).
-- Módulo **Configuración**:
-  - Datos de la empresa (nombre, RUT, giro, teléfono, email, dirección) y logo, que aparece en la proforma impresa. El logo se guarda como imagen redimensionada dentro del mismo documento de Firestore (sin necesidad de configurar Firebase Storage aparte).
-  - Importación masiva desde Excel para **Clientes** y **Catálogo**: sube un archivo .xlsx/.xls/.csv con encabezados razonablemente parecidos a los campos (el sistema reconoce variaciones comunes, ej. "Razón Social" o "Nombre", "RUT", "Costo" o "Costo Neto", etc.) y crea los registros en Firestore. Filas sin el dato mínimo requerido (razón social, o código+descripción) se omiten y se informa cuántas.
-- Dashboard sigue como placeholder, a la espera de indicadores reales.
+## Folio de cotización
 
-## La proforma no es un documento tributario
+- Se asigna al **guardar** una cotización nueva, mediante una transacción sobre `contadores/cotizaciones` (`ultimoFolio + 1`), lo que garantiza que sea **correlativo y único**.
+- Se muestra en formato **`F-000001`** en la lista, en el título del editor y en el documento impreso.
+- Una cotización en estado borrador aún **no tiene folio** hasta que se guarda; si se imprime antes, aparece como `BORRADOR (sin folio)`.
 
-El botón "Generar proforma" crea un documento interno (con su propio folio correlativo) pensado para enviarlo al contador externo y que él emita la factura o boleta real en el SII. La proforma se abre para imprimir/guardar como PDF usando la función nativa del navegador (no requiere librerías adicionales). El documento incluye una nota aclarando que no es válido ante el SII.
+---
 
-## Simplificación actual de Cotizaciones (a revisar en fase futura)
+## Impresión / PDF de la cotización
 
-- El IVA 19% se calcula sobre el neto total (después del descuento global), sin diferenciar ítems afectos/exentos individualmente.
-- No hay todavía versionado de cotizaciones aceptadas (se puede editar en cualquier estado).
-- No hay historial de auditoría por cambio de estado todavía.
+Botón **"Imprimir / PDF"** en el editor de cotizaciones. Genera un documento con:
 
-## Próximas fases sugeridas
+- **Encabezado izquierdo:** datos de la empresa emisora (logo, nombre, RUT, giro, dirección, teléfono/email) desde `configuracion/empresa`.
+- **Encabezado derecho:** título **COTIZACIÓN**, folio `F-000001` y fecha.
+- **Ficha del cliente:** razón social, RUT, giro, dirección, comuna/región, contacto, teléfono, email (y obra/referencia si existen).
+- **Detalle:** Código · Descripción · UM · Cantidad · Precio unitario · Total neto.
+- **Resumen:** Neto, Descuento (si aplica), IVA (19 %) y Total.
+- **Pie:** frase de vigencia ("Cotización válida por N días, hasta DD-MM-YYYY…").
 
-1. Dashboard con indicadores reales (conversión, pendientes, facturado, por cobrar) usando los datos de Cotizaciones y Facturación.
-2. PDF con diseño propio para la cotización (no solo la proforma).
-3. Historial de auditoría (quién y cuándo cambió cada estado).
-4. Permisos por rol (administrador, vendedor, supervisor, consulta).
+Usa el diálogo de impresión del navegador, donde se puede elegir impresora o **"Guardar como PDF"**. La proforma (módulo Facturación) usa su propia área de impresión; ambas nunca se imprimen a la vez.
+
+---
+
+## Cambios recientes
+
+- Columna **UM** (unidad de medida del catálogo) en el detalle del editor de cotizaciones.
+- Botón **Imprimir / PDF** con formato de cotización membretado (empresa, cliente, folio `F-000001`, detalle con UM, resumen neto/IVA/total y vigencia).
+- Folio mostrado en formato `F-000001` en lista, editor e impresión.
+
+## Próximos pasos sugeridos
+
+- Poblar el **Dashboard** con indicadores reales (cotizaciones activas, pendientes, aceptadas del mes, por cobrar).
+- Flujo de datos completo del sistema en PDF (documentación).

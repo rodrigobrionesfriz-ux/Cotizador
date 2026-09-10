@@ -253,6 +253,7 @@
               <tr>
                 <th>Código</th>
                 <th>Descripción</th>
+                <th>UM</th>
                 <th class="col-num">Cant.</th>
                 <th class="col-num">Precio unit.</th>
                 <th class="col-num">Costo</th>
@@ -304,6 +305,7 @@
 
         <div class="modal-actions">
           <button id="btn-cancelar-cotizacion" type="button" class="btn btn-ghost">Cancelar</button>
+          <button id="btn-imprimir-cotizacion" type="button" class="btn btn-ghost">Imprimir / PDF</button>
           <button id="btn-guardar-cotizacion" type="button" class="btn btn-primary">Guardar cotización</button>
         </div>
       </div>
@@ -708,8 +710,9 @@
   </div>
 </div>
 
-<!-- ÁREA DE IMPRESIÓN: PROFORMA (solo visible al imprimir) -->
+<!-- ÁREAS DE IMPRESIÓN (solo visibles al imprimir) -->
 <div id="proforma-print-area"></div>
+<div id="cotizacion-print-area"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="module" src="js/firebase-config.js"></script>

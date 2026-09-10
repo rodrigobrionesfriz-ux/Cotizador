@@ -658,12 +658,13 @@ input:focus, select:focus {
 
 .btn-small { padding: 6px 12px; font-size: 12.5px; border-radius: 5px; }
 
-/* ---------- IMPRESIÓN DE PROFORMA ---------- */
-#proforma-print-area { display: none; }
+/* ---------- IMPRESIÓN DE PROFORMA / COTIZACIÓN ---------- */
+#proforma-print-area, #cotizacion-print-area { display: none; }
 
 @media print {
-  body > *:not(#proforma-print-area) { display: none !important; }
-  #proforma-print-area { display: block !important; }
+  body > *:not(#proforma-print-area):not(#cotizacion-print-area) { display: none !important; }
+  #proforma-print-area, #cotizacion-print-area { display: block !important; }
+  @page { margin: 14mm; }
 }
 
 /* ---------- RESPONSIVE ---------- */

@@ -53,6 +53,7 @@ const totMargen = document.getElementById("tot-margen");
 
 const btnCancelar = document.getElementById("btn-cancelar-cotizacion");
 const btnGuardar = document.getElementById("btn-guardar-cotizacion");
+const btnImprimir = document.getElementById("btn-imprimir-cotizacion");
 
 // ---------- Estado local ----------
 let cotizaciones = [];
@@ -61,10 +62,23 @@ let catalogoActivo = [];
 let editandoId = null;
 let editandoFolio = null;
 let lineaItems = []; // filas del editor: { itemId, codigo, descripcion, unidad, cantidad, precio, costo, descuentoItem }
+let empresaInfo = {}; // datos de la empresa emisora, para el encabezado de impresión
 
 const formatoCLP = new Intl.NumberFormat("es-CL", {
   style: "currency", currency: "CLP", maximumFractionDigits: 0
 });
+
+// Folio correlativo único en formato F-000001
+function formatoFolio(n) {
+  return n || n === 0 ? "F-" + String(n).padStart(6, "0") : "—";
+}
+
+// Fecha ISO (YYYY-MM-DD) a formato chileno DD-MM-YYYY
+function formatoFecha(iso) {
+  if (!iso) return "";
+  const partes = String(iso).split("-");
+  return partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : iso;
+}
 
 function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -94,6 +108,10 @@ window.addEventListener("auth-ready", () => {
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((it) => it.estado !== "inactivo");
   }, (err) => console.error("Error leyendo catálogo:", err));
+
+  onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+    empresaInfo = snap.exists() ? snap.data() : {};
+  }, (err) => console.error("Error leyendo datos de empresa (cotizaciones):", err));
 }, { once: true });
 
 // ---------- Combobox buscable reutilizable (cliente e ítem) ----------
@@ -212,7 +230,7 @@ function renderLista(lista) {
   lista.forEach((c) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="cell-mono">${c.folio ?? "—"}</td>
+      <td class="cell-mono">${c.folio ? formatoFolio(c.folio) : "—"}</td>
       <td>${escapeHtml(c.clienteNombre || "—")}</td>
       <td>${escapeHtml(c.fecha || "—")}</td>
       <td>${escapeHtml(c.fechaVigencia || "—")}</td>
@@ -259,7 +277,7 @@ function abrirEditor(cot) {
   if (cot) {
     editandoId = cot.id;
     editandoFolio = cot.folio;
-    folioLabel.textContent = `Cotización N° ${cot.folio}`;
+    folioLabel.textContent = `Cotización ${formatoFolio(cot.folio)}`;
     const clienteExistente = clientesActivos.find((c) => c.id === cot.clienteId);
     comboCliente.setSeleccion(clienteExistente || (cot.clienteId ? { id: cot.clienteId, razonSocial: cot.clienteNombre, rut: cot.clienteRut } : null));
     inputObra.value = cot.obraReferencia || "";
@@ -336,6 +354,7 @@ function renderItems() {
     tr.innerHTML = `
       <td class="cell-mono">${escapeHtml(linea.codigo)}</td>
       <td>${escapeHtml(linea.descripcion)}</td>
+      <td>${escapeHtml(linea.unidad || "—")}</td>
       <td class="col-num"><input type="number" class="row-qty-input" min="0" step="1" value="${linea.cantidad}" data-idx="${idx}" data-field="cantidad"></td>
       <td class="col-num"><input type="number" class="row-price-input" min="0" step="1" value="${linea.precio}" data-idx="${idx}" data-field="precio"></td>
       <td class="col-num"><input type="number" class="row-cost-input" min="0" step="1" value="${linea.costo || 0}" data-idx="${idx}" data-field="costo"></td>
@@ -363,7 +382,7 @@ function recalcularSoloTotales(idx) {
   const linea = lineaItems[idx];
   const subtotal = linea.cantidad * linea.precio * (1 - (linea.descuentoItem || 0) / 100);
   const row = itemsTbody.children[idx];
-  if (row) row.children[6].textContent = formatoCLP.format(subtotal);
+  if (row) row.children[7].textContent = formatoCLP.format(subtotal);
   recalcularTotales();
 }
 
@@ -476,4 +495,114 @@ async function obtenerSiguienteFolio() {
     return siguiente;
   });
   return nuevoFolio;
+}
+
+// ================= IMPRESIÓN / PDF DE LA COTIZACIÓN =================
+
+btnImprimir.addEventListener("click", imprimirCotizacion);
+
+function imprimirCotizacion() {
+  if (!selectCliente.value) { alert("Selecciona un cliente antes de imprimir."); return; }
+  if (lineaItems.length === 0) { alert("Agrega al menos un ítem antes de imprimir."); return; }
+
+  const cliente = clientesActivos.find((c) => c.id === selectCliente.value) || {};
+  const obraSel = obrasDisponibles.find((o) => o.id === selectObraId.value);
+  const t = calcularTotales();
+
+  const fecha = inputFecha.value || new Date().toISOString().slice(0, 10);
+  const vigenciaDias = Number(inputVigencia.value) || 15;
+  const fechaVigencia = sumarDias(fecha, vigenciaDias);
+  const folioTexto = editandoFolio ? formatoFolio(editandoFolio) : "BORRADOR (sin folio)";
+
+  const filasItems = lineaItems.map((it) => {
+    const totalNeto = it.cantidad * it.precio * (1 - (it.descuentoItem || 0) / 100);
+    return `
+      <tr>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE;">${escapeHtml(it.codigo || "")}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE;">${escapeHtml(it.descripcion || "")}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:center;">${escapeHtml(it.unidad || "—")}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${it.cantidad}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${formatoCLP.format(it.precio)}</td>
+        <td style="padding:6px 8px; border-bottom:1px solid #EEE; text-align:right;">${formatoCLP.format(totalNeto)}</td>
+      </tr>`;
+  }).join("");
+
+  const datosCliente = [
+    cliente.rut ? `<strong>RUT:</strong> ${escapeHtml(cliente.rut)}` : "",
+    cliente.giro ? `<strong>Giro:</strong> ${escapeHtml(cliente.giro)}` : "",
+    cliente.direccion ? `<strong>Dirección:</strong> ${escapeHtml(cliente.direccion)}` : "",
+    (cliente.comuna || cliente.region) ? `<strong>Comuna:</strong> ${escapeHtml([cliente.comuna, cliente.region].filter(Boolean).join(", "))}` : "",
+    cliente.contacto ? `<strong>Contacto:</strong> ${escapeHtml(cliente.contacto)}` : "",
+    cliente.telefono ? `<strong>Teléfono:</strong> ${escapeHtml(cliente.telefono)}` : "",
+    cliente.email ? `<strong>Email:</strong> ${escapeHtml(cliente.email)}` : ""
+  ].filter(Boolean).join(" &nbsp;·&nbsp; ");
+
+  const obraTexto = [
+    obraSel ? `<strong>Obra:</strong> ${escapeHtml(obraSel.nombre)}` : "",
+    inputObra.value.trim() ? `<strong>Referencia:</strong> ${escapeHtml(inputObra.value.trim())}` : ""
+  ].filter(Boolean).join(" &nbsp;·&nbsp; ");
+
+  const printArea = document.getElementById("cotizacion-print-area");
+  // Limpia el área de proforma para que nunca se impriman ambas a la vez.
+  const proformaArea = document.getElementById("proforma-print-area");
+  if (proformaArea) proformaArea.innerHTML = "";
+
+  printArea.innerHTML = `
+    <div style="font-family: Arial, sans-serif; color:#1a1a1a; padding: 24px; max-width: 800px; margin: 0 auto;">
+
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1F2A38; padding-bottom:14px; margin-bottom:18px;">
+        <div>
+          ${empresaInfo.logoBase64 ? `<img src="${empresaInfo.logoBase64}" style="max-height:64px; margin-bottom:8px;">` : ""}
+          <div style="font-weight:bold; font-size:15px;">${escapeHtml(empresaInfo.nombre || "")}</div>
+          ${empresaInfo.rut ? `<div style="font-size:12px; color:#555;">RUT: ${escapeHtml(empresaInfo.rut)}</div>` : ""}
+          ${empresaInfo.giro ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.giro)}</div>` : ""}
+          ${empresaInfo.direccion ? `<div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.direccion)}</div>` : ""}
+          <div style="font-size:12px; color:#555;">${escapeHtml(empresaInfo.telefono || "")}${empresaInfo.email ? " · " + escapeHtml(empresaInfo.email) : ""}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:22px; font-weight:bold; letter-spacing:0.04em; color:#1F2A38;">COTIZACIÓN</div>
+          <div style="font-size:15px; font-weight:bold; color:#1D4ED8; margin-top:2px;">${folioTexto}</div>
+          <div style="font-size:12px; color:#555; margin-top:4px;">Fecha: ${formatoFecha(fecha)}</div>
+        </div>
+      </div>
+
+      <div style="background:#F4F5F7; border:1px solid #E2E5EA; border-radius:4px; padding:12px 14px; margin-bottom:18px; font-size:12.5px; line-height:1.6;">
+        <div style="font-weight:bold; font-size:13px; margin-bottom:4px;">${escapeHtml(cliente.razonSocial || "")}</div>
+        ${datosCliente ? `<div style="color:#444;">${datosCliente}</div>` : ""}
+        ${obraTexto ? `<div style="color:#444; margin-top:4px;">${obraTexto}</div>` : ""}
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:16px;">
+        <thead>
+          <tr style="background:#1F2A38; color:#fff; text-align:left;">
+            <th style="padding:7px 8px;">Código</th>
+            <th style="padding:7px 8px;">Descripción</th>
+            <th style="padding:7px 8px; text-align:center;">UM</th>
+            <th style="padding:7px 8px; text-align:right;">Cant.</th>
+            <th style="padding:7px 8px; text-align:right;">Precio unit.</th>
+            <th style="padding:7px 8px; text-align:right;">Total neto</th>
+          </tr>
+        </thead>
+        <tbody>${filasItems}</tbody>
+      </table>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <table style="font-size:13px; width:280px;">
+          <tr><td style="padding:3px 0;">Neto</td><td style="text-align:right;">${formatoCLP.format(t.neto)}</td></tr>
+          ${t.descuentoGlobalMonto > 0 ? `<tr><td style="padding:3px 0;">Descuento (${t.descuentoGlobalPct}%)</td><td style="text-align:right;">- ${formatoCLP.format(t.descuentoGlobalMonto)}</td></tr>` : ""}
+          <tr><td style="padding:3px 0;">IVA (19%)</td><td style="text-align:right;">${formatoCLP.format(t.iva)}</td></tr>
+          <tr style="font-weight:bold; border-top:1px solid #1F2A38;"><td style="padding:6px 0;">Total</td><td style="text-align:right;">${formatoCLP.format(t.total)}</td></tr>
+        </table>
+      </div>
+
+      ${textareaObs.value.trim() ? `<div style="margin-top:18px; font-size:12px;"><strong>Observaciones:</strong><br>${escapeHtml(textareaObs.value.trim())}</div>` : ""}
+
+      <div style="margin-top:26px; font-size:12px; color:#333; border-top:1px solid #E2E5EA; padding-top:12px;">
+        Cotización válida por ${vigenciaDias} días, hasta el ${formatoFecha(fechaVigencia)}. Precios expresados en pesos chilenos (CLP). Valores netos, IVA incluido en el total.
+      </div>
+
+    </div>
+  `;
+
+  window.print();
 }

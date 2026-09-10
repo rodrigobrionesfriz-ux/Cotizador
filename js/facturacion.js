@@ -112,6 +112,9 @@ async function generarProforma(cot) {
 
 function imprimirProforma(cot) {
   const printArea = document.getElementById("proforma-print-area");
+  // Limpia el área de cotización para que nunca se impriman ambas a la vez.
+  const cotArea = document.getElementById("cotizacion-print-area");
+  if (cotArea) cotArea.innerHTML = "";
 
   const filasItems = (cot.items || []).map((it) => `
     <tr>
