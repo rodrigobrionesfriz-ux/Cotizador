@@ -8,12 +8,16 @@ Fase 1: estructura base + módulo de **Clientes** funcional (CRUD en tiempo real
 1. Ve a https://console.firebase.google.com y crea un proyecto nuevo.
 2. En **Compilación → Authentication**, habilita el proveedor **Correo electrónico/Contraseña** y crea tu primer usuario (tú mismo) manualmente desde la pestaña "Users".
 3. En **Compilación → Firestore Database**, crea la base de datos (modo producción).
-4. En **Reglas** de Firestore, usa esto para partir (solo usuarios autenticados pueden leer/escribir):
+4. En **Reglas** de Firestore, usa esto para partir (usuarios autenticados pueden leer/escribir todo; el documento de datos de la empresa además se puede leer sin sesión iniciada, para que el logo y el nombre se vean en la pantalla de login):
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /configuracion/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
