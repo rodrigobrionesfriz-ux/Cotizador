@@ -25,7 +25,10 @@ body {
   color: var(--text);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* la página nunca desborda a lo ancho; el scroll va en contenedores internos */
 }
+
+img { max-width: 100%; }
 
 .hidden { display: none !important; }
 
@@ -317,13 +320,19 @@ input:focus, select:focus {
   background: var(--paper-raised);
   border: 1px solid var(--line);
   border-radius: 4px;
-  overflow: hidden;
+  overflow-x: auto;               /* scroll horizontal cuando la tabla no cabe (móvil) */
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
+}
+
+/* En pantallas chicas la tabla mantiene un ancho mínimo legible y se desplaza en horizontal */
+@media (max-width: 640px) {
+  .data-table { min-width: 560px; }
 }
 
 .data-table thead th {
@@ -406,6 +415,8 @@ input:focus, select:focus {
   align-items: center;
   justify-content: center;
   z-index: 50;
+  padding: 16px;                 /* margen de seguridad en pantallas chicas */
+  overflow-y: auto;
 }
 
 .modal {
@@ -413,7 +424,9 @@ input:focus, select:focus {
   border-radius: 5px;
   padding: 28px 30px;
   width: 520px;
-  max-width: 92vw;
+  max-width: 100%;
+  max-height: 92vh;              /* nunca más alto que la pantalla */
+  overflow-y: auto;             /* scroll vertical si el contenido no cabe */
   border-top: 3px solid var(--blue);
 }
 
@@ -585,7 +598,10 @@ input:focus, select:focus {
   border: 1px solid var(--line);
   border-radius: 3px;
   resize: vertical;
+  width: 100%;
 }
+
+textarea, input { max-width: 100%; }
 
 .badge-borrador { background: #ECECEA; color: var(--text-muted); }
 .badge-enviada, .badge-en_revision { background: #FBEEDC; color: var(--blue-dark); }
@@ -872,4 +888,27 @@ input:focus, select:focus {
   .item-picker input, #picker-cantidad { width: 100%; }
   .totals-panel { flex-direction: column; }
   .config-logo-row { flex-direction: column; align-items: flex-start; }
+
+  .main { padding: 18px 14px; max-width: 100%; }
+  .topbar h2 { font-size: 19px; }
+
+  /* Barra de herramientas y buscadores a ancho completo */
+  .view-toolbar { flex-direction: column; align-items: stretch; }
+  .view-toolbar .btn { width: 100%; }
+  .search-input { width: 100%; }
+
+  /* Modales cómodos en móvil */
+  .modal { padding: 20px 16px; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; }
+
+  /* Editor visual: barra y acciones en columna */
+  .pl-editor { height: 94vh; }
+  .pl-editor-bar { flex-direction: column; align-items: stretch; }
+  .pl-editor-bar-actions .btn { flex: 1; }
+}
+
+@media (max-width: 460px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .main { padding: 14px 12px; }
 }
