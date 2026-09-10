@@ -17,6 +17,8 @@ Cotizador/
 │   └── styles.css          # Estilos + reglas de impresión (@media print)
 └── js/
     ├── firebase-config.js  # Inicialización de Firebase (auth + db)
+    ├── tenant.js           # Multi-empresa: resuelve la empresa del usuario + helpers de rutas
+    ├── admin.js            # Administración: crear empresas y asignar usuarios (super-admin)
     ├── auth.js             # Login / logout / estado de sesión
     ├── app.js              # Navegación entre módulos y menú móvil
     ├── resumen.js          # Indicadores del Resumen en tiempo real
@@ -31,6 +33,29 @@ Cotizador/
 ```
 
 Cada módulo JS se carga como `type="module"` y se suscribe en tiempo real a su colección de Firestore mediante `onSnapshot`.
+
+---
+
+## Acceso por empresa (multi-empresa)
+
+Cada usuario solo ve y edita los datos de su empresa. Los datos de negocio viven bajo `empresas/{empresaId}/…` (clientes, catalogo, cotizaciones, obras, contadores, configuracion). Un documento `usuarios/{uid}` guarda a qué empresa pertenece cada usuario y su rol.
+
+- Al iniciar sesión, `tenant.js` resuelve la empresa del usuario y expone `colE(nombre)` / `docE(...)` que apuntan siempre a `empresas/{empresaId}/…`. Todos los módulos se suscriben al evento `empresa-ready`.
+- Si el usuario no tiene empresa asignada, ve la pantalla "Acceso por empresa" y no entra a la app.
+- **Super-admin**: los correos listados en `SUPER_ADMINS` (en `js/tenant.js`) tienen acceso total y ven el módulo **Administración** para crear empresas y asignar usuarios.
+
+### El aislamiento lo imponen las reglas de Firestore
+
+El archivo `firestore.rules` (en la raíz) contiene las reglas que garantizan que un usuario no pueda leer ni escribir datos de otra empresa. **Publícalas** en Firebase Console → Firestore Database → Reglas. El correo super-admin en las reglas debe coincidir con el de `js/tenant.js`.
+
+### Puesta en marcha
+
+1. Publica `firestore.rules` en Firebase.
+2. Inicia sesión con el correo super-admin. Como aún no hay empresa, aparece "Crear empresa y entrar": crea la primera (te asigna a ella como admin).
+3. Pide a cada usuario que inicie sesión una vez (queda registrado en `usuarios/` sin empresa).
+4. En **Administración → Usuarios**, asigna a cada uno su empresa (y rol si corresponde). Desde ese momento cada usuario entra directo a los datos de su empresa.
+
+> Nota: crear las cuentas de acceso (correo/contraseña) se hace en Firebase Authentication; la asignación de empresa se hace en la app.
 
 ---
 
@@ -112,6 +137,7 @@ Con "Usar editor visual" activo y el botón "Abrir editor visual", se abre un li
 
 ## Cambios recientes
 
+- **Acceso por empresa (multi-empresa)**: datos aislados por empresa bajo `empresas/{empresaId}/…`, módulo Administración para asignar usuarios, pantalla de "sin empresa" y reglas de Firestore (`firestore.rules`) que imponen el aislamiento.
 - **Editor visual de la plantilla**: lienzo A4 con bloques que se arrastran, redimensionan y estilizan (fuente, tamaño, color, alineación); incluye bloques de texto libre. Se guarda como `layout` y la impresión lo respeta.
 - **Formato de impresión editable**: plantilla configurable para la cotización (título, folio, color, columnas, vigencia, nota al pie y condiciones) con vista previa.
 - **Estado editable**: selector de estado inline en el listado de cotizaciones (junto al botón Abrir) y también en el detalle que abre cada KPI del Resumen; el cambio se guarda al instante en Firestore.

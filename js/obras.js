@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import {
   collection,
   addDoc,
@@ -27,8 +28,8 @@ export function getObrasActivas() {
   return obras.filter((o) => o.estado !== "cerrada");
 }
 
-window.addEventListener("auth-ready", () => {
-  const obrasQuery = query(collection(db, "obras"), orderBy("codigo"));
+window.addEventListener("empresa-ready", () => {
+  const obrasQuery = query(colE("obras"), orderBy("codigo"));
   onSnapshot(obrasQuery, (snap) => {
     obras = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     render(obras);
@@ -113,10 +114,10 @@ form.addEventListener("submit", async (e) => {
 
   try {
     if (id) {
-      await updateDoc(doc(db, "obras", id), data);
+      await updateDoc(docE("obras", id), data);
     } else {
       data.createdAt = serverTimestamp();
-      await addDoc(collection(db, "obras"), data);
+      await addDoc(colE("obras"), data);
     }
     modal.classList.add("hidden");
   } catch (err) {

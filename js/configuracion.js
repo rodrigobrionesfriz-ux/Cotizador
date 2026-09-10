@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import {
   doc,
   getDoc,
@@ -22,7 +23,7 @@ let logoBase64Actual = "";
 async function cargarEmpresa() {
   let snap;
   try {
-    snap = await getDoc(doc(db, "configuracion", "empresa"));
+    snap = await getDoc(docE("configuracion", "empresa"));
   } catch (err) {
     console.error("Error leyendo datos de empresa:", err);
     return;
@@ -49,27 +50,23 @@ const sidebarBrandMark = document.getElementById("brand-mark");
 const loginSub = document.getElementById("login-sub");
 const loginMark = document.getElementById("login-mark");
 
-onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
-  const data = snap.exists() ? snap.data() : {};
-
-  // Sin nombre configurado, el login y el sidebar muestran "Empresa no configurada".
-  const nombreMarca = (data.nombre || "").trim() || "Empresa no configurada";
-  if (sidebarBrandSub) sidebarBrandSub.textContent = nombreMarca;
-  if (loginSub) loginSub.textContent = nombreMarca.toUpperCase();
-
-  if (data.logoBase64) {
-    const logoHtml = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
-    if (sidebarBrandMark) sidebarBrandMark.innerHTML = logoHtml;
-    if (loginMark) loginMark.innerHTML = `<img src="${data.logoBase64}" style="max-width:70px;max-height:70px;object-fit:contain;">`;
-  }
-}, (err) => {
-  // Antes de habilitar la lectura pública del documento en las reglas de Firestore,
-  // esto fallará mientras no haya sesión iniciada. No es un error visible para el usuario.
-  console.error("Error leyendo datos de empresa (branding):", err);
-});
-
-window.addEventListener("auth-ready", () => {
+// El branding (sidebar) se sincroniza con el documento de la empresa del usuario.
+// Requiere empresa asignada, por eso se suscribe al resolver la empresa.
+window.addEventListener("empresa-ready", () => {
   cargarEmpresa();
+
+  onSnapshot(docE("configuracion", "empresa"), (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    const nombreMarca = (data.nombre || "").trim() || "Empresa no configurada";
+    if (sidebarBrandSub) sidebarBrandSub.textContent = nombreMarca;
+    if (loginSub) loginSub.textContent = nombreMarca.toUpperCase();
+
+    if (data.logoBase64) {
+      const logoHtml = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
+      if (sidebarBrandMark) sidebarBrandMark.innerHTML = logoHtml;
+      if (loginMark) loginMark.innerHTML = `<img src="${data.logoBase64}" style="max-width:70px;max-height:70px;object-fit:contain;">`;
+    }
+  }, (err) => console.error("Error leyendo datos de empresa (branding):", err));
 }, { once: true });
 
 function mostrarPreview(dataUrl) {
@@ -122,7 +119,7 @@ btnGuardarEmpresa.addEventListener("click", async () => {
   });
 
   try {
-    await setDoc(doc(db, "configuracion", "empresa"), data, { merge: true });
+    await setDoc(docE("configuracion", "empresa"), data, { merge: true });
     empresaGuardadoMsg.classList.remove("hidden");
     setTimeout(() => empresaGuardadoMsg.classList.add("hidden"), 3000);
   } catch (err) {
@@ -217,7 +214,7 @@ async function guardarEnLotes(coleccion, documentos) {
   for (let i = 0; i < documentos.length; i += TAMANO_LOTE) {
     const lote = writeBatch(db);
     documentos.slice(i, i + TAMANO_LOTE).forEach((docData) => {
-      const ref = doc(collection(db, coleccion));
+      const ref = doc(colE(coleccion));
       lote.set(ref, docData);
     });
     await lote.commit();

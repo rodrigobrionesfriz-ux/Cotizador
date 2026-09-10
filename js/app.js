@@ -12,7 +12,8 @@ const titles = {
   cotizaciones: "Cotizaciones",
   obras: "Obras",
   facturacion: "Facturación",
-  configuracion: "Configuración"
+  configuracion: "Configuración",
+  admin: "Administración"
 };
 
 function closeMobileMenu() {

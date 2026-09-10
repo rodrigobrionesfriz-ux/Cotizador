@@ -26,6 +26,10 @@ loginForm.addEventListener("submit", async (e) => {
 });
 
 logoutBtn.addEventListener("click", () => signOut(auth));
+const gateLogout = document.getElementById("gate-logout");
+if (gateLogout) gateLogout.addEventListener("click", () => signOut(auth));
+
+const gateEl = document.getElementById("empresa-gate");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
@@ -33,8 +37,10 @@ onAuthStateChanged(auth, (user) => {
     appEl.classList.remove("hidden");
     userEmailEl.textContent = user.email;
     window.dispatchEvent(new CustomEvent("auth-ready"));
+    // La visibilidad app vs. "sin empresa" la resuelve tenant.js.
   } else {
     loginScreen.classList.remove("hidden");
     appEl.classList.add("hidden");
+    if (gateEl) gateEl.classList.add("hidden");
   }
 });

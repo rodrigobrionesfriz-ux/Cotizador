@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import { abrirNuevoClienteDesdeExterno } from "./clientes.js";
 import { abrirNuevoItemDesdeExterno } from "./catalogo.js";
 import { construirHtmlCotizacion } from "./plantilla.js";
@@ -100,25 +101,25 @@ function selectEstadoHtml(id, estadoActual) {
 
 // ================= SUSCRIPCIONES =================
 
-window.addEventListener("auth-ready", () => {
-  onSnapshot(query(collection(db, "cotizaciones"), orderBy("folio", "desc")), (snap) => {
+window.addEventListener("empresa-ready", () => {
+  onSnapshot(query(colE("cotizaciones"), orderBy("folio", "desc")), (snap) => {
     cotizaciones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     renderLista(cotizaciones);
   }, (err) => console.error("Error leyendo cotizaciones:", err));
 
-  onSnapshot(collection(db, "clientes"), (snap) => {
+  onSnapshot(colE("clientes"), (snap) => {
     clientesActivos = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((c) => c.estado !== "inactivo");
   }, (err) => console.error("Error leyendo clientes:", err));
 
-  onSnapshot(collection(db, "catalogo"), (snap) => {
+  onSnapshot(colE("catalogo"), (snap) => {
     catalogoActivo = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((it) => it.estado !== "inactivo");
   }, (err) => console.error("Error leyendo catálogo:", err));
 
-  onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+  onSnapshot(docE("configuracion", "empresa"), (snap) => {
     empresaInfo = snap.exists() ? snap.data() : {};
   }, (err) => console.error("Error leyendo datos de empresa (cotizaciones):", err));
 }, { once: true });
@@ -280,7 +281,7 @@ tbody.addEventListener("change", (e) => {
 // Actualiza el estado de una cotización (usado por el listado y por el Resumen).
 export async function actualizarEstadoCotizacion(id, nuevoEstado) {
   try {
-    await updateDoc(doc(db, "cotizaciones", id), {
+    await updateDoc(docE("cotizaciones", id), {
       estado: nuevoEstado,
       updatedAt: serverTimestamp()
     });
@@ -506,11 +507,11 @@ btnGuardar.addEventListener("click", async () => {
 
   try {
     if (editandoId) {
-      await updateDoc(doc(db, "cotizaciones", editandoId), data);
+      await updateDoc(docE("cotizaciones", editandoId), data);
     } else {
       data.folio = await obtenerSiguienteFolio();
       data.createdAt = serverTimestamp();
-      await addDoc(collection(db, "cotizaciones"), data);
+      await addDoc(colE("cotizaciones"), data);
     }
     cerrarEditor();
   } catch (err) {
@@ -527,7 +528,7 @@ function sumarDias(fechaISO, dias) {
 
 // Folio correlativo, asignado atómicamente con una transacción sobre un contador
 async function obtenerSiguienteFolio() {
-  const contadorRef = doc(db, "contadores", "cotizaciones");
+  const contadorRef = docE("contadores", "cotizaciones");
   const nuevoFolio = await runTransaction(db, async (tx) => {
     const snap = await tx.get(contadorRef);
     const actual = snap.exists() ? (snap.data().ultimoFolio || 0) : 0;

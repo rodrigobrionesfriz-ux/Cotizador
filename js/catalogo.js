@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import {
   collection,
   addDoc,
@@ -76,8 +77,8 @@ const CATEGORIAS = {
 let items = []; // caché local para búsqueda y edición
 
 // ---------- Suscripción en tiempo real ----------
-window.addEventListener("auth-ready", () => {
-  const itemsQuery = query(collection(db, "catalogo"), orderBy("codigo"));
+window.addEventListener("empresa-ready", () => {
+  const itemsQuery = query(colE("catalogo"), orderBy("codigo"));
   onSnapshot(itemsQuery, (snapshot) => {
     items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     render(items);
@@ -209,11 +210,11 @@ form.addEventListener("submit", async (e) => {
 
   try {
     if (id) {
-      await updateDoc(doc(db, "catalogo", id), data);
+      await updateDoc(docE("catalogo", id), data);
       window.dispatchEvent(new CustomEvent("item-guardado", { detail: { id, esNuevo: false, ...data } }));
     } else {
       data.createdAt = serverTimestamp();
-      const docRef = await addDoc(collection(db, "catalogo"), data);
+      const docRef = await addDoc(colE("catalogo"), data);
       window.dispatchEvent(new CustomEvent("item-guardado", { detail: { id: docRef.id, esNuevo: true, ...data } }));
     }
     modal.classList.add("hidden");

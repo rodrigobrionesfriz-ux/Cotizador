@@ -3,6 +3,7 @@ import {
   collection,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { colE } from "./tenant.js";
 import { abrirCotizacionPorId, actualizarEstadoCotizacion } from "./cotizaciones.js";
 
 // ================= RESUMEN (antes "Dashboard") =================
@@ -247,8 +248,8 @@ modalDetalle.addEventListener("click", (e) => {
 });
 
 // ---------- Suscripción en tiempo real ----------
-window.addEventListener("auth-ready", () => {
-  onSnapshot(collection(db, "cotizaciones"), (snap) => {
+window.addEventListener("empresa-ready", () => {
+  onSnapshot(colE("cotizaciones"), (snap) => {
     cotsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     actualizarResumen(cotsCache);
   }, (err) => console.error("Error leyendo resumen:", err));

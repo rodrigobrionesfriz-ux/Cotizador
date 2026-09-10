@@ -1,6 +1,5 @@
-import { db } from "./firebase-config.js";
+import { docE } from "./tenant.js";
 import {
-  doc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -496,7 +495,7 @@ function layoutLimpio() {
 
 async function guardar() {
   try {
-    await setDoc(doc(db, "configuracion", "plantillaCotizacion"),
+    await setDoc(docE("configuracion", "plantillaCotizacion"),
       { usarLayout: true, layout: layoutLimpio() }, { merge: true });
     const btn = backdrop.querySelector("#pl-ed-save");
     const prev = btn.textContent;

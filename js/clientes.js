@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import {
   collection,
   addDoc,
@@ -24,8 +25,8 @@ const btnCancelar = document.getElementById("btn-cancelar-cliente");
 let clientes = []; // caché local para búsqueda y edición
 
 // ---------- Suscripción en tiempo real ----------
-window.addEventListener("auth-ready", () => {
-  const clientesQuery = query(collection(db, "clientes"), orderBy("razonSocial"));
+window.addEventListener("empresa-ready", () => {
+  const clientesQuery = query(colE("clientes"), orderBy("razonSocial"));
   onSnapshot(clientesQuery, (snapshot) => {
     clientes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
     render(clientes);
@@ -136,11 +137,11 @@ form.addEventListener("submit", async (e) => {
 
   try {
     if (id) {
-      await updateDoc(doc(db, "clientes", id), data);
+      await updateDoc(docE("clientes", id), data);
       window.dispatchEvent(new CustomEvent("cliente-guardado", { detail: { id, esNuevo: false, ...data } }));
     } else {
       data.createdAt = serverTimestamp();
-      const docRef = await addDoc(collection(db, "clientes"), data);
+      const docRef = await addDoc(colE("clientes"), data);
       window.dispatchEvent(new CustomEvent("cliente-guardado", { detail: { id: docRef.id, esNuevo: true, ...data } }));
     }
     modal.classList.add("hidden");

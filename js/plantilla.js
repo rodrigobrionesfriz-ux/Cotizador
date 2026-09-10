@@ -4,6 +4,7 @@ import {
   setDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { docE } from "./tenant.js";
 import { renderLayoutHtml, abrirEditorPlantilla } from "./plantilla-editor.js";
 
 // ================= PLANTILLA EDITABLE DE IMPRESIÓN DE COTIZACIONES =================
@@ -230,7 +231,7 @@ const msgGuardado = document.getElementById("plantilla-guardado-msg");
 if (btnGuardar) {
   btnGuardar.addEventListener("click", async () => {
     try {
-      await setDoc(doc(db, "configuracion", "plantillaCotizacion"), leerFormulario(), { merge: true });
+      await setDoc(docE("configuracion", "plantillaCotizacion"), leerFormulario(), { merge: true });
       if (msgGuardado) {
         msgGuardado.classList.remove("hidden");
         setTimeout(() => msgGuardado.classList.add("hidden"), 3000);
@@ -263,12 +264,12 @@ if (btnAbrirEditor) {
 }
 
 // ---------- Suscripción en tiempo real ----------
-window.addEventListener("auth-ready", () => {
-  onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+window.addEventListener("empresa-ready", () => {
+  onSnapshot(docE("configuracion", "empresa"), (snap) => {
     empresaActual = snap.exists() ? snap.data() : {};
   }, (err) => console.error("Error leyendo empresa (plantilla):", err));
 
-  onSnapshot(doc(db, "configuracion", "plantillaCotizacion"), (snap) => {
+  onSnapshot(docE("configuracion", "plantillaCotizacion"), (snap) => {
     plantillaActual = { ...DEFAULTS, ...(snap.exists() ? snap.data() : {}) };
     llenarFormulario(plantillaActual);
   }, (err) => console.error("Error leyendo plantilla:", err));

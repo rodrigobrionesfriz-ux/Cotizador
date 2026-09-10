@@ -1,4 +1,5 @@
 import { db } from "./firebase-config.js";
+import { colE, docE } from "./tenant.js";
 import {
   collection,
   doc,
@@ -27,12 +28,12 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-window.addEventListener("auth-ready", () => {
-  onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+window.addEventListener("empresa-ready", () => {
+  onSnapshot(docE("configuracion", "empresa"), (snap) => {
     empresaInfo = snap.exists() ? snap.data() : {};
   }, (err) => console.error("Error leyendo datos de empresa:", err));
 
-  const q = query(collection(db, "cotizaciones"), where("estado", "==", "aceptada"));
+  const q = query(colE("cotizaciones"), where("estado", "==", "aceptada"));
   onSnapshot(q, (snap) => {
     cotizacionesAceptadas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     render(cotizacionesAceptadas);
@@ -92,7 +93,7 @@ tbody.addEventListener("click", async (e) => {
 // ================= PROFORMA =================
 
 async function generarProforma(cot) {
-  const contadorRef = doc(db, "contadores", "proformas");
+  const contadorRef = docE("contadores", "proformas");
   const folio = await runTransaction(db, async (tx) => {
     const snap = await tx.get(contadorRef);
     const actual = snap.exists() ? (snap.data().ultimoFolio || 0) : 0;
@@ -102,7 +103,7 @@ async function generarProforma(cot) {
   });
 
   const hoy = new Date().toISOString().slice(0, 10);
-  await updateDoc(doc(db, "cotizaciones", cot.id), {
+  await updateDoc(docE("cotizaciones", cot.id), {
     proformaFolio: folio,
     proformaFecha: hoy
   });
@@ -219,7 +220,7 @@ facturaForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    await updateDoc(doc(db, "cotizaciones", id), { factura });
+    await updateDoc(docE("cotizaciones", id), { factura });
     facturaModal.classList.add("hidden");
   } catch (err) {
     console.error("Error registrando factura:", err);
