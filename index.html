@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cotizaciones · Electricidad y Obras Civiles</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -14,18 +14,19 @@
 <div id="login-screen" class="login-screen">
   <div class="login-card">
     <div class="login-mark">⌁</div>
-    <h1>Cotizaciones</h1>
-    <p class="login-sub">Electricidad y Obras Civiles</p>
+    <h1>SISTEMA DE COTIZACIONES</h1>
+    <p class="login-sub">SOCIEDAD AGRÍCOLA Y FORESTAL LA CABAÑA LTDA</p>
     <form id="login-form">
-      <label>Correo
+      <label>CORREO
         <input type="email" id="login-email" required autocomplete="username">
       </label>
-      <label>Contraseña
+      <label>CONTRASEÑA
         <input type="password" id="login-password" required autocomplete="current-password">
       </label>
       <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
       <p id="login-error" class="login-error"></p>
     </form>
+    <p class="login-footer">Cotizador Eléctrico y Obras Civiles · Desarrollado por Rodrigo Briones Friz / Claude AI</p>
   </div>
 </div>
 
@@ -35,15 +36,15 @@
   <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
   <aside class="sidebar">
-    <div class="sidebar-grid"></div>
     <div class="brand">
       <span class="brand-mark">⌁</span>
       <div>
-        <div class="brand-title">Cotizaciones</div>
-        <div class="brand-sub">Elec. &amp; Obras Civiles</div>
+        <div class="brand-title">COTIZACIONES</div>
+        <div class="brand-sub">Sociedad Agrícola y Forestal<br>La Cabaña Ltda.</div>
       </div>
     </div>
 
+    <div class="nav-section-label">Módulos</div>
     <nav class="nav">
       <button class="nav-item active" data-view="dashboard">
         <span class="nav-icon">▦</span> Dashboard
@@ -135,20 +136,163 @@
       </div>
     </section>
 
-    <!-- CATÁLOGO (placeholder) -->
+    <!-- CATÁLOGO -->
     <section id="view-catalogo" class="view">
-      <div class="empty-state">
-        <p>Módulo de Catálogo (productos y servicios).</p>
-        <p class="muted">Se construye en la fase 2, una vez validado Clientes.</p>
+      <div class="view-toolbar">
+        <input type="text" id="catalogo-search" class="search-input" placeholder="Buscar por código o descripción…">
+        <button id="btn-nuevo-item" class="btn btn-primary">+ Nuevo ítem</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th class="col-num">Costo</th>
+              <th class="col-num">Precio</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="catalogo-tbody">
+            <!-- filas generadas por JS -->
+          </tbody>
+        </table>
+        <div id="catalogo-empty" class="empty-state hidden">
+          <p>Aún no hay productos ni servicios registrados.</p>
+          <p class="muted">Crea el primero con el botón “+ Nuevo ítem”.</p>
+        </div>
       </div>
     </section>
 
-    <!-- COTIZACIONES (placeholder) -->
+    <!-- COTIZACIONES -->
     <section id="view-cotizaciones" class="view">
-      <div class="empty-state">
-        <p>Módulo de Cotizaciones.</p>
-        <p class="muted">Se construye en la fase 3, sobre Clientes y Catálogo.</p>
+
+      <!-- Sub-vista: LISTA -->
+      <div id="cotizaciones-lista">
+        <div class="view-toolbar">
+          <input type="text" id="cotizaciones-search" class="search-input" placeholder="Buscar por folio o cliente…">
+          <button id="btn-nueva-cotizacion" class="btn btn-primary">+ Nueva cotización</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Folio</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Vigencia</th>
+                <th class="col-num">Total</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cotizaciones-tbody"></tbody>
+          </table>
+          <div id="cotizaciones-empty" class="empty-state hidden">
+            <p>Aún no hay cotizaciones creadas.</p>
+            <p class="muted">Crea la primera con el botón “+ Nueva cotización”.</p>
+          </div>
+        </div>
       </div>
+
+      <!-- Sub-vista: EDITOR -->
+      <div id="cotizaciones-editor" class="hidden">
+        <button id="btn-volver-lista" class="link-btn back-link">← Volver a cotizaciones</button>
+
+        <div class="editor-header">
+          <div>
+            <span id="editor-folio-label" class="editor-folio">Nueva cotización</span>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+          <label>Cliente *
+            <select id="cot-cliente" required></select>
+          </label>
+          <label>Referencia de obra
+            <input type="text" id="cot-obra" placeholder="Opcional">
+          </label>
+          <label>Fecha
+            <input type="date" id="cot-fecha">
+          </label>
+          <label>Vigencia (días)
+            <input type="number" id="cot-vigencia" min="1" value="15">
+          </label>
+        </div>
+
+        <h4 class="section-label">Ítems</h4>
+
+        <div class="item-picker">
+          <select id="picker-item"></select>
+          <input type="number" id="picker-cantidad" min="1" value="1" placeholder="Cant.">
+          <button id="btn-agregar-item" type="button" class="btn btn-ghost">+ Agregar</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th class="col-num">Cant.</th>
+                <th class="col-num">Precio unit.</th>
+                <th class="col-num">Desc. %</th>
+                <th class="col-num">Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cot-items-tbody"></tbody>
+          </table>
+          <div id="cot-items-empty" class="empty-state hidden">
+            <p>Agrega ítems del catálogo con el selector de arriba.</p>
+          </div>
+        </div>
+
+        <div class="totals-panel">
+          <label class="totals-discount">Descuento global %
+            <input type="number" id="cot-descuento-global" min="0" max="100" value="0">
+          </label>
+          <div class="totals-lines">
+            <div class="totals-line"><span>Neto</span><span id="tot-neto" class="cell-mono">$0</span></div>
+            <div class="totals-line"><span>Descuento</span><span id="tot-descuento" class="cell-mono">$0</span></div>
+            <div class="totals-line"><span>IVA (19%)</span><span id="tot-iva" class="cell-mono">$0</span></div>
+            <div class="totals-line totals-total"><span>Total</span><span id="tot-total" class="cell-mono">$0</span></div>
+            <div class="totals-line totals-margen"><span>Margen estimado</span><span id="tot-margen" class="cell-mono">$0 (0%)</span></div>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+          <label>Estado
+            <select id="cot-estado">
+              <option value="borrador">Borrador</option>
+              <option value="enviada">Enviada</option>
+              <option value="en_revision">En revisión</option>
+              <option value="aceptada">Aceptada</option>
+              <option value="no_aceptada">No aceptada</option>
+              <option value="vencida">Vencida</option>
+              <option value="anulada">Anulada</option>
+            </select>
+          </label>
+          <label id="cot-motivo-wrap" class="hidden">Motivo de no aceptación
+            <input type="text" id="cot-motivo">
+          </label>
+        </div>
+
+        <label class="observaciones-label">Observaciones
+          <textarea id="cot-observaciones" rows="3"></textarea>
+        </label>
+
+        <div class="modal-actions">
+          <button id="btn-cancelar-cotizacion" type="button" class="btn btn-ghost">Cancelar</button>
+          <button id="btn-guardar-cotizacion" type="button" class="btn btn-primary">Guardar cotización</button>
+        </div>
+      </div>
+
     </section>
 
     <!-- OBRAS (placeholder) -->
@@ -241,9 +385,79 @@
     showDebugError(e.reason && e.reason.message ? e.reason.message : String(e.reason));
   });
 </script>
+<!-- MODAL ÍTEM CATÁLOGO -->
+<div id="item-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3 id="item-modal-title">Nuevo ítem</h3>
+    <form id="item-form">
+      <input type="hidden" id="item-id">
+      <div class="form-row">
+        <label>Código *
+          <input type="text" id="item-codigo" required>
+        </label>
+        <label>Categoría *
+          <select id="item-categoria" required>
+            <option value="material">Material</option>
+            <option value="equipo">Equipo</option>
+            <option value="mano_obra">Mano de obra</option>
+            <option value="servicio">Servicio</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row form-row-full">
+        <label>Descripción *
+          <input type="text" id="item-descripcion" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Unidad *
+          <select id="item-unidad" required>
+            <option value="UN">UN — Unidad</option>
+            <option value="M">M — Metro</option>
+            <option value="M2">M² — Metro cuadrado</option>
+            <option value="M3">M³ — Metro cúbico</option>
+            <option value="KG">KG — Kilogramo</option>
+            <option value="HH">HH — Hora hombre</option>
+            <option value="GL">GL — Global</option>
+          </select>
+        </label>
+        <label>Proveedor
+          <input type="text" id="item-proveedor">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Costo neto ($) *
+          <input type="number" id="item-costo" min="0" step="1" required>
+        </label>
+        <label>Precio de venta neto ($) *
+          <input type="number" id="item-precio" min="0" step="1" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="item-afectoIva" checked>
+          Afecto a IVA
+        </label>
+        <label>Estado
+          <select id="item-estado">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-cancelar-item" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar ítem</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/auth.js"></script>
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/clientes.js"></script>
+<script type="module" src="js/catalogo.js"></script>
+<script type="module" src="js/cotizaciones.js"></script>
 </body>
 </html>

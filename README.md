@@ -47,14 +47,21 @@ Luego abre `http://localhost:8000` en el navegador.
 ## Qué incluye esta fase
 
 - Login con Firebase Authentication (correo/contraseña).
-- Navegación entre módulos (Dashboard, Clientes, Catálogo, Cotizaciones, Obras, Facturación).
+- Navegación entre módulos (Dashboard, Clientes, Catálogo, Cotizaciones, Obras, Facturación), con menú deslizable en mobile.
 - Módulo **Clientes** completo: crear, editar, buscar por nombre/RUT, marcar activo/inactivo (no se elimina, se preserva historial según la regla de negocio del documento base).
-- Dashboard, Catálogo, Cotizaciones, Obras y Facturación quedan como vistas placeholder, listas para construirse en las siguientes fases.
+- Módulo **Catálogo** completo: crear, editar, buscar por código/descripción, categoría (material, equipo, mano de obra, servicio), costo y precio neto, afecto a IVA, y activo/inactivo (mismo criterio de no eliminar).
+- Módulo **Cotizaciones** completo: lista con búsqueda por folio/cliente, editor con selección de cliente y referencia de obra opcional, ítems tomados del catálogo (cantidad, precio y descuento editables por línea), descuento global, cálculo automático de neto, IVA 19%, total, costo total y margen estimado, folio correlativo automático (asignado de forma atómica), y estados (borrador, enviada, en revisión, aceptada, no aceptada con motivo, vencida, anulada).
+- Dashboard, Obras y Facturación quedan como vistas placeholder, listas para construirse en las siguientes fases.
+
+## Simplificación actual de Cotizaciones (a revisar en fase futura)
+
+- El IVA 19% se calcula sobre el neto total (después del descuento global), sin diferenciar ítems afectos/exentos individualmente. Si en la práctica manejas ítems exentos junto con afectos en la misma cotización, este cálculo se debe ajustar.
+- No hay todavía versionado de cotizaciones aceptadas (la regla de negocio del documento base indica que una cotización aceptada no debería modificarse libremente); por ahora se puede editar en cualquier estado.
+- No hay generación de PDF ni historial de auditoría por cambio de estado todavía.
 
 ## Próximas fases sugeridas
 
-1. Catálogo de productos y servicios (con activar/desactivar).
-2. Cotizaciones: selección de cliente + obra opcional, ítems, cálculo de descuento/IVA/margen, estados y folio.
-3. Generación de PDF de la cotización.
-4. Facturación asociada a cotización aceptada + control de pago.
-5. Dashboard con indicadores reales (conversión, pendientes, facturado, por cobrar).
+1. Generación de PDF de la cotización con el formato del documento base.
+2. Facturación asociada a cotización aceptada + control de pago.
+3. Dashboard con indicadores reales (conversión, pendientes, facturado, por cobrar).
+4. Historial de auditoría (quién y cuándo cambió cada estado).
