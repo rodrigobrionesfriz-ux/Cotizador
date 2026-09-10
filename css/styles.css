@@ -953,6 +953,7 @@ textarea, input { max-width: 100%; }
 }
 
 @media (max-width: 460px) {
-  .stat-grid { grid-template-columns: 1fr; }
-  .main { padding: 14px 12px; }
+  /* Las tarjetas del Resumen quedan siempre en 2 columnas en móvil */
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-value { font-size: 20px; }
 }
