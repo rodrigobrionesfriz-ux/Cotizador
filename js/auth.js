@@ -32,6 +32,7 @@ onAuthStateChanged(auth, (user) => {
     loginScreen.classList.add("hidden");
     appEl.classList.remove("hidden");
     userEmailEl.textContent = user.email;
+    window.dispatchEvent(new CustomEvent("auth-ready"));
   } else {
     loginScreen.classList.remove("hidden");
     appEl.classList.add("hidden");

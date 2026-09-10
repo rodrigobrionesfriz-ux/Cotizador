@@ -20,7 +20,13 @@ const camposEmpresa = ["nombre", "rut", "giro", "telefono", "email", "direccion"
 let logoBase64Actual = "";
 
 async function cargarEmpresa() {
-  const snap = await getDoc(doc(db, "configuracion", "empresa"));
+  let snap;
+  try {
+    snap = await getDoc(doc(db, "configuracion", "empresa"));
+  } catch (err) {
+    console.error("Error leyendo datos de empresa:", err);
+    return;
+  }
   if (!snap.exists()) return;
   const data = snap.data();
 
@@ -34,24 +40,37 @@ async function cargarEmpresa() {
     mostrarPreview(data.logoBase64);
   }
 }
-cargarEmpresa();
 
-// Mantiene el nombre y logo del sidebar sincronizados con lo guardado en Configuración,
-// en cualquier módulo en el que esté el usuario.
+// Mantiene el nombre y logo del login y del sidebar sincronizados con lo guardado
+// en Configuración. Se ejecuta sin esperar el login (requiere que la regla de
+// Firestore permita lectura pública de /configuracion/empresa).
 const sidebarBrandSub = document.getElementById("sidebar-brand-sub");
 const sidebarBrandMark = document.getElementById("brand-mark");
+const loginSub = document.getElementById("login-sub");
+const loginMark = document.getElementById("login-mark");
 
 onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
   if (!snap.exists()) return;
   const data = snap.data();
 
-  if (sidebarBrandSub && data.nombre) {
-    sidebarBrandSub.textContent = data.nombre;
+  if (data.nombre) {
+    if (sidebarBrandSub) sidebarBrandSub.textContent = data.nombre;
+    if (loginSub) loginSub.textContent = data.nombre.toUpperCase();
   }
-  if (sidebarBrandMark && data.logoBase64) {
-    sidebarBrandMark.innerHTML = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
+  if (data.logoBase64) {
+    const logoHtml = `<img src="${data.logoBase64}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;">`;
+    if (sidebarBrandMark) sidebarBrandMark.innerHTML = logoHtml;
+    if (loginMark) loginMark.innerHTML = `<img src="${data.logoBase64}" style="max-width:70px;max-height:70px;object-fit:contain;">`;
   }
+}, (err) => {
+  // Antes de habilitar la lectura pública del documento en las reglas de Firestore,
+  // esto fallará mientras no haya sesión iniciada. No es un error visible para el usuario.
+  console.error("Error leyendo datos de empresa (branding):", err);
 });
+
+window.addEventListener("auth-ready", () => {
+  cargarEmpresa();
+}, { once: true });
 
 function mostrarPreview(dataUrl) {
   logoPreview.src = dataUrl;

@@ -24,14 +24,15 @@ const btnCancelar = document.getElementById("btn-cancelar-cliente");
 let clientes = []; // caché local para búsqueda y edición
 
 // ---------- Suscripción en tiempo real ----------
-const clientesQuery = query(collection(db, "clientes"), orderBy("razonSocial"));
-
-onSnapshot(clientesQuery, (snapshot) => {
-  clientes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-  render(clientes);
-}, (err) => {
-  console.error("Error leyendo clientes:", err);
-});
+window.addEventListener("auth-ready", () => {
+  const clientesQuery = query(collection(db, "clientes"), orderBy("razonSocial"));
+  onSnapshot(clientesQuery, (snapshot) => {
+    clientes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render(clientes);
+  }, (err) => {
+    console.error("Error leyendo clientes:", err);
+  });
+}, { once: true });
 
 // ---------- Render de la tabla ----------
 function render(lista) {

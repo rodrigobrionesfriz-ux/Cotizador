@@ -27,16 +27,17 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
-  empresaInfo = snap.exists() ? snap.data() : {};
-});
+window.addEventListener("auth-ready", () => {
+  onSnapshot(doc(db, "configuracion", "empresa"), (snap) => {
+    empresaInfo = snap.exists() ? snap.data() : {};
+  }, (err) => console.error("Error leyendo datos de empresa:", err));
 
-const q = query(collection(db, "cotizaciones"), where("estado", "==", "aceptada"));
-
-onSnapshot(q, (snap) => {
-  cotizacionesAceptadas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  render(cotizacionesAceptadas);
-}, (err) => console.error("Error leyendo cotizaciones aceptadas:", err));
+  const q = query(collection(db, "cotizaciones"), where("estado", "==", "aceptada"));
+  onSnapshot(q, (snap) => {
+    cotizacionesAceptadas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render(cotizacionesAceptadas);
+  }, (err) => console.error("Error leyendo cotizaciones aceptadas:", err));
+}, { once: true });
 
 function render(lista) {
   tbody.innerHTML = "";

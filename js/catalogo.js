@@ -31,14 +31,15 @@ const CATEGORIAS = {
 let items = []; // caché local para búsqueda y edición
 
 // ---------- Suscripción en tiempo real ----------
-const itemsQuery = query(collection(db, "catalogo"), orderBy("codigo"));
-
-onSnapshot(itemsQuery, (snapshot) => {
-  items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-  render(items);
-}, (err) => {
-  console.error("Error leyendo catálogo:", err);
-});
+window.addEventListener("auth-ready", () => {
+  const itemsQuery = query(collection(db, "catalogo"), orderBy("codigo"));
+  onSnapshot(itemsQuery, (snapshot) => {
+    items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render(items);
+  }, (err) => {
+    console.error("Error leyendo catálogo:", err);
+  });
+}, { once: true });
 
 // ---------- Formato ----------
 const formatoCLP = new Intl.NumberFormat("es-CL", {

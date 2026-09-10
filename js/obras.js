@@ -27,13 +27,14 @@ export function getObrasActivas() {
   return obras.filter((o) => o.estado !== "cerrada");
 }
 
-const obrasQuery = query(collection(db, "obras"), orderBy("codigo"));
-
-onSnapshot(obrasQuery, (snap) => {
-  obras = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  render(obras);
-  window.dispatchEvent(new CustomEvent("obras-actualizadas", { detail: obras }));
-}, (err) => console.error("Error leyendo obras:", err));
+window.addEventListener("auth-ready", () => {
+  const obrasQuery = query(collection(db, "obras"), orderBy("codigo"));
+  onSnapshot(obrasQuery, (snap) => {
+    obras = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render(obras);
+    window.dispatchEvent(new CustomEvent("obras-actualizadas", { detail: obras }));
+  }, (err) => console.error("Error leyendo obras:", err));
+}, { once: true });
 
 function escapeHtml(str) {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

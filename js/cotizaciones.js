@@ -73,24 +73,26 @@ const ESTADO_LABELS = {
 
 // ================= SUSCRIPCIONES =================
 
-onSnapshot(query(collection(db, "cotizaciones"), orderBy("folio", "desc")), (snap) => {
-  cotizaciones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  renderLista(cotizaciones);
-});
+window.addEventListener("auth-ready", () => {
+  onSnapshot(query(collection(db, "cotizaciones"), orderBy("folio", "desc")), (snap) => {
+    cotizaciones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderLista(cotizaciones);
+  }, (err) => console.error("Error leyendo cotizaciones:", err));
 
-onSnapshot(collection(db, "clientes"), (snap) => {
-  clientesActivos = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((c) => c.estado !== "inactivo");
-  poblarSelectClientes();
-});
+  onSnapshot(collection(db, "clientes"), (snap) => {
+    clientesActivos = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((c) => c.estado !== "inactivo");
+    poblarSelectClientes();
+  }, (err) => console.error("Error leyendo clientes:", err));
 
-onSnapshot(collection(db, "catalogo"), (snap) => {
-  catalogoActivo = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((it) => it.estado !== "inactivo");
-  poblarSelectCatalogo();
-});
+  onSnapshot(collection(db, "catalogo"), (snap) => {
+    catalogoActivo = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((it) => it.estado !== "inactivo");
+    poblarSelectCatalogo();
+  }, (err) => console.error("Error leyendo catálogo:", err));
+}, { once: true });
 
 function poblarSelectClientes() {
   const seleccionado = selectCliente.value;
