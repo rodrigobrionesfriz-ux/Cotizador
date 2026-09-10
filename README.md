@@ -137,6 +137,7 @@ Con "Usar editor visual" activo y el botón "Abrir editor visual", se abre un li
 
 ## Cambios recientes
 
+- **Móvil**: la página nunca desborda a lo ancho; tablas con scroll horizontal, modales y editor con scroll vertical, toolbars y buscadores a ancho completo, tarjetas del Resumen en una columna en pantallas muy chicas.
 - Al cambiar de usuario la app se recarga sola para partir con permisos, módulo Administración y datos de la empresa correctos (antes había que limpiar caché).
 - La "Vista previa" del formato refleja el layout del editor visual guardado.
 - Administración permite **eliminar empresas** (borra sus subcolecciones y desasigna a sus usuarios).
