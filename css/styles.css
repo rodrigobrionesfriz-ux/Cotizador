@@ -896,13 +896,50 @@ textarea, input { max-width: 100%; }
   .totals-panel { flex-direction: column; }
   .config-logo-row { flex-direction: column; align-items: flex-start; }
 
-  .main { padding: 18px 14px; max-width: 100%; }
+  /* ---- Marco de la app fijo; solo el contenido hace scroll ---- */
+  html, body { height: 100%; }
+  body { overflow: hidden; }          /* la página no se mueve */
+  .app { min-height: 0; height: 100dvh; }
+  .main {
+    height: 100dvh;
+    max-width: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .topbar {
+    flex: 0 0 auto;                    /* la barra superior queda fija */
+    margin: 0;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
   .topbar h2 { font-size: 19px; }
+  /* La vista activa es la única que se desplaza */
+  .view.active {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 14px 24px;
+  }
 
-  /* Barra de herramientas y buscadores a ancho completo */
-  .view-toolbar { flex-direction: column; align-items: stretch; }
+  /* Barra de herramientas y buscadores a ancho completo, fija arriba del contenido */
+  .view-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--paper);
+    padding-bottom: 10px;
+  }
   .view-toolbar .btn { width: 100%; }
   .search-input { width: 100%; }
+
+  /* Encabezado de tabla fijo al desplazar la lista */
+  .data-table thead th { position: sticky; top: 0; background: var(--paper-raised); z-index: 2; }
 
   /* Modales cómodos en móvil */
   .modal { padding: 20px 16px; }
