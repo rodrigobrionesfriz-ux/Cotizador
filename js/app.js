@@ -11,7 +11,8 @@ const titles = {
   catalogo: "Catálogo",
   cotizaciones: "Cotizaciones",
   obras: "Obras",
-  facturacion: "Facturación"
+  facturacion: "Facturación",
+  configuracion: "Configuración"
 };
 
 function closeMobileMenu() {

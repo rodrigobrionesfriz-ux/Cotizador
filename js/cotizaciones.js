@@ -26,6 +26,7 @@ const btnVolver = document.getElementById("btn-volver-lista");
 const folioLabel = document.getElementById("editor-folio-label");
 const selectCliente = document.getElementById("cot-cliente");
 const inputObra = document.getElementById("cot-obra");
+const selectObraId = document.getElementById("cot-obra-id");
 const inputFecha = document.getElementById("cot-fecha");
 const inputVigencia = document.getElementById("cot-vigencia");
 const selectEstado = document.getElementById("cot-estado");
@@ -103,6 +104,15 @@ function poblarSelectCatalogo() {
     catalogoActivo.map((it) => `<option value="${it.id}">${escapeHtml(it.codigo)} — ${escapeHtml(it.descripcion)}</option>`).join("");
 }
 
+let obrasDisponibles = [];
+window.addEventListener("obras-actualizadas", (e) => {
+  obrasDisponibles = (e.detail || []).filter((o) => o.estado !== "cerrada");
+  const seleccionada = selectObraId.value;
+  selectObraId.innerHTML = '<option value="">— Sin obra —</option>' +
+    obrasDisponibles.map((o) => `<option value="${o.id}">${escapeHtml(o.codigo)} — ${escapeHtml(o.nombre)}</option>`).join("");
+  if (seleccionada) selectObraId.value = seleccionada;
+});
+
 // ================= LISTA =================
 
 function renderLista(lista) {
@@ -166,6 +176,7 @@ function abrirEditor(cot) {
     folioLabel.textContent = `Cotización N° ${cot.folio}`;
     selectCliente.value = cot.clienteId || "";
     inputObra.value = cot.obraReferencia || "";
+    selectObraId.value = cot.obraId || "";
     inputFecha.value = cot.fecha || "";
     inputVigencia.value = cot.vigenciaDias || 15;
     selectEstado.value = cot.estado || "borrador";
@@ -177,6 +188,7 @@ function abrirEditor(cot) {
     folioLabel.textContent = "Nueva cotización (folio se asigna al guardar)";
     selectCliente.value = "";
     inputObra.value = "";
+    selectObraId.value = "";
     inputFecha.value = new Date().toISOString().slice(0, 10);
     inputVigencia.value = 15;
     selectEstado.value = "borrador";
@@ -312,6 +324,7 @@ btnGuardar.addEventListener("click", async () => {
   }
 
   const cliente = clientesActivos.find((c) => c.id === selectCliente.value);
+  const obraSel = obrasDisponibles.find((o) => o.id === selectObraId.value);
   const t = calcularTotales();
   const fecha = inputFecha.value || new Date().toISOString().slice(0, 10);
   const vigenciaDias = Number(inputVigencia.value) || 15;
@@ -322,6 +335,8 @@ btnGuardar.addEventListener("click", async () => {
     clienteNombre: cliente ? cliente.razonSocial : "",
     clienteRut: cliente ? cliente.rut : "",
     obraReferencia: inputObra.value.trim(),
+    obraId: selectObraId.value || null,
+    obraNombre: obraSel ? obraSel.nombre : "",
     fecha,
     vigenciaDias,
     fechaVigencia,
