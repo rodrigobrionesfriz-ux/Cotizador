@@ -338,6 +338,7 @@ function renderItems() {
       <td>${escapeHtml(linea.descripcion)}</td>
       <td class="col-num"><input type="number" class="row-qty-input" min="0" step="1" value="${linea.cantidad}" data-idx="${idx}" data-field="cantidad"></td>
       <td class="col-num"><input type="number" class="row-price-input" min="0" step="1" value="${linea.precio}" data-idx="${idx}" data-field="precio"></td>
+      <td class="col-num"><input type="number" class="row-cost-input" min="0" step="1" value="${linea.costo || 0}" data-idx="${idx}" data-field="costo"></td>
       <td class="col-num"><input type="number" class="row-disc-input" min="0" max="100" step="1" value="${linea.descuentoItem || 0}" data-idx="${idx}" data-field="descuentoItem"></td>
       <td class="col-num cell-mono">${formatoCLP.format(subtotal)}</td>
       <td><button class="remove-row-btn" data-idx="${idx}" title="Quitar">×</button></td>
@@ -362,7 +363,7 @@ function recalcularSoloTotales(idx) {
   const linea = lineaItems[idx];
   const subtotal = linea.cantidad * linea.precio * (1 - (linea.descuentoItem || 0) / 100);
   const row = itemsTbody.children[idx];
-  if (row) row.children[5].textContent = formatoCLP.format(subtotal);
+  if (row) row.children[6].textContent = formatoCLP.format(subtotal);
   recalcularTotales();
 }
 

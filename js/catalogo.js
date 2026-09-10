@@ -21,6 +21,51 @@ const form = document.getElementById("item-form");
 const btnNuevo = document.getElementById("btn-nuevo-item");
 const btnCancelar = document.getElementById("btn-cancelar-item");
 
+const selectCategoria = document.getElementById("item-categoria");
+const subcategoriaRow = document.getElementById("item-subcategoria-row");
+const selectSubcategoria = document.getElementById("item-subcategoria");
+const calcHHBox = document.getElementById("item-calc-hh");
+const inputCostoMensual = document.getElementById("item-costoMensual");
+const inputJhMensuales = document.getElementById("item-jhMensuales");
+const inputHorasPorJornada = document.getElementById("item-horasPorJornada");
+const displayCostoHH = document.getElementById("item-costoHHCalculado");
+const inputCostoNeto = document.getElementById("item-costo");
+
+const SUBCATEGORIAS = { propia: "Propia", contratista: "Contratista" };
+
+function actualizarVisibilidadManoObra() {
+  const esManoObra = selectCategoria.value === "mano_obra";
+  subcategoriaRow.style.display = esManoObra ? "" : "none";
+  calcHHBox.style.display = esManoObra ? "" : "none";
+}
+selectCategoria.addEventListener("change", actualizarVisibilidadManoObra);
+
+function calcularCostoHH() {
+  const costoMensual = Number(inputCostoMensual.value) || 0;
+  const jh = Number(inputJhMensuales.value) || 0;
+  const horas = Number(inputHorasPorJornada.value) || 0;
+  const totalHoras = jh * horas;
+  return costoMensual > 0 && totalHoras > 0 ? costoMensual / totalHoras : null;
+}
+
+function mostrarCostoHHCalculado() {
+  const costoHH = calcularCostoHH();
+  displayCostoHH.value = costoHH !== null ? formatoCLP.format(costoHH) : "";
+}
+
+function recalcularCostoHH() {
+  const costoHH = calcularCostoHH();
+  if (costoHH !== null) {
+    displayCostoHH.value = formatoCLP.format(costoHH);
+    inputCostoNeto.value = Math.round(costoHH);
+  } else {
+    displayCostoHH.value = "";
+  }
+}
+[inputCostoMensual, inputJhMensuales, inputHorasPorJornada].forEach((el) => {
+  el.addEventListener("input", recalcularCostoHH);
+});
+
 const CATEGORIAS = {
   material: "Material",
   equipo: "Equipo",
@@ -70,7 +115,7 @@ function render(lista) {
     tr.innerHTML = `
       <td class="cell-mono">${escapeHtml(it.codigo || "")}</td>
       <td>${escapeHtml(it.descripcion || "")}</td>
-      <td>${CATEGORIAS[it.categoria] || "—"}</td>
+      <td>${CATEGORIAS[it.categoria] || "—"}${it.categoria === "mano_obra" && it.subcategoria ? ` (${SUBCATEGORIAS[it.subcategoria] || it.subcategoria})` : ""}</td>
       <td>${escapeHtml(it.unidad || "—")}</td>
       <td class="col-num cell-mono">${formatoCLP.format(it.costo || 0)}</td>
       <td class="col-num cell-mono">${formatoCLP.format(it.precio || 0)}</td>
@@ -101,6 +146,8 @@ export function abrirNuevoItemDesdeExterno() {
   document.getElementById("item-id").value = "";
   document.getElementById("item-afectoIva").checked = true;
   modalTitle.textContent = "Nuevo ítem";
+  actualizarVisibilidadManoObra();
+  displayCostoHH.value = "";
   modal.classList.remove("hidden");
 }
 
@@ -125,6 +172,13 @@ tbody.addEventListener("click", (e) => {
   document.getElementById("item-afectoIva").checked = item.afectoIva !== false;
   document.getElementById("item-estado").value = item.estado || "activo";
 
+  selectSubcategoria.value = item.subcategoria || "propia";
+  inputCostoMensual.value = item.costoEmpresaMensual ?? "";
+  inputJhMensuales.value = item.jhMensuales ?? "";
+  inputHorasPorJornada.value = item.horasPorJornada ?? "";
+  actualizarVisibilidadManoObra();
+  mostrarCostoHHCalculado();
+
   modalTitle.textContent = "Editar ítem";
   modal.classList.remove("hidden");
 });
@@ -136,6 +190,7 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const id = document.getElementById("item-id").value;
+  const esManoObra = document.getElementById("item-categoria").value === "mano_obra";
   const data = {
     codigo: document.getElementById("item-codigo").value.trim(),
     categoria: document.getElementById("item-categoria").value,
@@ -145,7 +200,11 @@ form.addEventListener("submit", async (e) => {
     costo: Number(document.getElementById("item-costo").value) || 0,
     precio: Number(document.getElementById("item-precio").value) || 0,
     afectoIva: document.getElementById("item-afectoIva").checked,
-    estado: document.getElementById("item-estado").value
+    estado: document.getElementById("item-estado").value,
+    subcategoria: esManoObra ? selectSubcategoria.value : "",
+    costoEmpresaMensual: esManoObra ? (Number(inputCostoMensual.value) || 0) : 0,
+    jhMensuales: esManoObra ? (Number(inputJhMensuales.value) || 0) : 0,
+    horasPorJornada: esManoObra ? (Number(inputHorasPorJornada.value) || 0) : 0
   };
 
   try {

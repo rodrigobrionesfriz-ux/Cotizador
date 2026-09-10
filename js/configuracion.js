@@ -131,7 +131,52 @@ btnGuardarEmpresa.addEventListener("click", async () => {
   }
 });
 
-// ================= IMPORTACIÓN DESDE EXCEL =================
+// ---------- Plantillas descargables ----------
+
+document.getElementById("btn-plantilla-clientes").addEventListener("click", () => {
+  const datos = [
+    ["RUT", "Razón Social", "Giro", "Contacto", "Teléfono", "Email", "Comuna", "Región", "Dirección", "Estado"],
+    ["76.123.456-7", "Ejemplo Ltda.", "Servicios de construcción", "Juan Pérez", "+56 9 1234 5678", "contacto@ejemplo.cl", "Angol", "Araucanía", "Calle Falsa 123", "Activo"]
+  ];
+  const hoja = XLSX.utils.aoa_to_sheet(datos);
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, "Clientes");
+
+  const instrucciones = XLSX.utils.aoa_to_sheet([
+    ["Instrucciones"],
+    ["Estado acepta: Activo o Inactivo (si se deja vacío, se importa como Activo)."],
+    ["No borres la fila de encabezados. Puedes borrar la fila de ejemplo antes de subir el archivo."]
+  ]);
+  XLSX.utils.book_append_sheet(libro, instrucciones, "Instrucciones");
+
+  XLSX.writeFile(libro, "plantilla_clientes.xlsx");
+});
+
+document.getElementById("btn-plantilla-catalogo").addEventListener("click", () => {
+  const datos = [
+    ["Código", "Descripción", "Categoría", "Subcategoría (solo Mano de obra)", "Unidad", "Proveedor", "Costo", "Precio", "Afecto IVA", "Estado"],
+    ["MAT-001", "Cable eléctrico 2.5mm", "Material", "", "M", "Proveedor Ejemplo", "500", "800", "Sí", "Activo"],
+    ["MO-001", "Instalación eléctrica residencial", "Mano de obra", "Propia", "HH", "", "5000", "8000", "Sí", "Activo"],
+    ["MO-002", "Cuadrilla contratista", "Mano de obra", "Contratista", "HH", "Contratista Ejemplo", "6000", "9500", "Sí", "Activo"]
+  ];
+  const hoja = XLSX.utils.aoa_to_sheet(datos);
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, "Catálogo");
+
+  const instrucciones = XLSX.utils.aoa_to_sheet([
+    ["Instrucciones"],
+    ["Categoría acepta: Material, Equipo, Mano de obra, Servicio."],
+    ["Subcategoría solo aplica si Categoría es Mano de obra. Acepta: Propia o Contratista."],
+    ["Afecto IVA acepta: Sí o No (si se deja vacío, se importa como Sí)."],
+    ["Estado acepta: Activo o Inactivo (si se deja vacío, se importa como Activo)."],
+    ["No borres la fila de encabezados. Puedes borrar las filas de ejemplo antes de subir el archivo."]
+  ]);
+  XLSX.utils.book_append_sheet(libro, instrucciones, "Instrucciones");
+
+  XLSX.writeFile(libro, "plantilla_catalogo.xlsx");
+});
+
+// ---------- Importación desde Excel ----------
 
 function normalizarTexto(str) {
   return String(str || "")
@@ -250,6 +295,7 @@ const SINONIMOS_CATALOGO = {
   codigo: ["codigo", "cod"],
   descripcion: ["descripcion", "desc", "detalle"],
   categoria: ["categoria"],
+  subcategoria: ["subcategoria", "tipomanoobra", "tipo"],
   unidad: ["unidad", "um", "medida"],
   proveedor: ["proveedor"],
   costo: ["costo", "costoneto", "costounitario"],
@@ -257,6 +303,11 @@ const SINONIMOS_CATALOGO = {
   afectoIva: ["afectoiva", "iva"],
   estado: ["estado"]
 };
+
+function mapearSubcategoria(texto) {
+  const t = normalizarTexto(texto);
+  return t.includes("contratista") ? "contratista" : "propia";
+}
 
 function mapearCategoria(texto) {
   const t = normalizarTexto(texto);
@@ -298,10 +349,12 @@ document.getElementById("btn-import-catalogo").addEventListener("click", async (
       if (!codigo || !descripcion) { omitidos++; return; }
 
       const estadoTexto = normalizarTexto(mapa.estado ? fila[mapa.estado] : "");
+      const categoria = mapearCategoria(mapa.categoria ? fila[mapa.categoria] : "");
       documentos.push({
         codigo,
         descripcion,
-        categoria: mapearCategoria(mapa.categoria ? fila[mapa.categoria] : ""),
+        categoria,
+        subcategoria: categoria === "mano_obra" ? mapearSubcategoria(mapa.subcategoria ? fila[mapa.subcategoria] : "") : "",
         unidad: mapa.unidad ? String(fila[mapa.unidad] || "UN").trim() : "UN",
         proveedor: mapa.proveedor ? String(fila[mapa.proveedor] || "").trim() : "",
         costo: mapa.costo ? Number(fila[mapa.costo]) || 0 : 0,
