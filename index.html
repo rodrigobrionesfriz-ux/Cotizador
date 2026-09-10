@@ -85,21 +85,25 @@
     <!-- DASHBOARD -->
     <section id="view-dashboard" class="view active">
       <div class="stat-grid">
-        <div class="stat-card">
+        <div class="stat-card stat-card-clickable" data-metrica="activas" role="button" tabindex="0">
           <div class="stat-label">Cotizaciones activas</div>
           <div class="stat-value" id="stat-activas">—</div>
+          <div class="stat-hint">Ver detalle →</div>
         </div>
-        <div class="stat-card accent-amber">
+        <div class="stat-card accent-amber stat-card-clickable" data-metrica="pendientes" role="button" tabindex="0">
           <div class="stat-label">Pendientes de respuesta</div>
           <div class="stat-value" id="stat-pendientes">—</div>
+          <div class="stat-hint">Ver detalle →</div>
         </div>
-        <div class="stat-card accent-green">
+        <div class="stat-card accent-green stat-card-clickable" data-metrica="aceptadasMes" role="button" tabindex="0">
           <div class="stat-label">Aceptadas del mes</div>
           <div class="stat-value" id="stat-aceptadas-mes">—</div>
+          <div class="stat-hint">Ver detalle →</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-card-clickable" data-metrica="porCobrar" role="button" tabindex="0">
           <div class="stat-label">Por cobrar</div>
           <div class="stat-value" id="stat-por-cobrar">—</div>
+          <div class="stat-hint">Ver detalle →</div>
         </div>
       </div>
     </section>
@@ -707,6 +711,35 @@
         <button type="submit" class="btn btn-primary">Guardar factura</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL DETALLE DEL RESUMEN -->
+<div id="resumen-detalle-modal" class="modal-backdrop hidden">
+  <div class="modal modal-wide">
+    <h3 id="resumen-detalle-title">Detalle</h3>
+    <p id="resumen-detalle-sub" class="muted section-note"></p>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th class="col-num">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="resumen-detalle-tbody"></tbody>
+      </table>
+      <div id="resumen-detalle-empty" class="empty-state hidden">
+        <p>Sin cotizaciones en esta categoría.</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="btn-cerrar-resumen-detalle" class="btn btn-ghost">Cerrar</button>
+    </div>
   </div>
 </div>
 

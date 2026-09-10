@@ -291,6 +291,16 @@ input:focus, select:focus {
 .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
 .stat-value { font-family: var(--font-mono); font-size: 24px; font-weight: 500; }
 
+.stat-card-clickable { cursor: pointer; transition: box-shadow 0.15s ease, transform 0.15s ease; }
+.stat-card-clickable:hover {
+  box-shadow: 0 6px 18px rgba(31, 42, 56, 0.12);
+  transform: translateY(-1px);
+}
+.stat-card-clickable:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.stat-hint { font-size: 11px; color: var(--blue); margin-top: 8px; opacity: 0; transition: opacity 0.15s ease; }
+.stat-card-clickable:hover .stat-hint,
+.stat-card-clickable:focus-visible .stat-hint { opacity: 1; }
+
 /* ---------- TOOLBAR / SEARCH ---------- */
 .view-toolbar {
   display: flex;
@@ -391,6 +401,8 @@ input:focus, select:focus {
   max-width: 92vw;
   border-top: 3px solid var(--blue);
 }
+
+.modal-wide { width: 720px; }
 
 .modal h3 {
   font-family: var(--font-display);

@@ -89,9 +89,11 @@ Usa el diálogo de impresión del navegador, donde se puede elegir impresora o *
 
 Todo se actualiza en vivo vía `onSnapshot` sobre la colección `cotizaciones`.
 
+Cada tarjeta es **clicable**: abre un modal con la lista de cotizaciones que la componen (folio, cliente, fecha, estado y total). Desde ahí, el botón "Abrir" lleva la cotización a su editor. El detalle usa exactamente el mismo filtro que la tarjeta, así siempre coinciden.
+
 ## Cambios recientes
 
-- Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real.
+- Módulo **Resumen** (antes "Dashboard"): renombrado y conectado a Firestore para actualizar sus indicadores en tiempo real. Tarjetas clicables que abren el detalle de cada indicador y permiten saltar a cada cotización.
 - Columna **UM** (unidad de medida del catálogo) en el detalle del editor de cotizaciones.
 - Botón **Imprimir / PDF** con formato de cotización membretado (empresa, cliente, folio `F-000001`, detalle con UM, resumen neto/IVA/total y vigencia).
 - Folio mostrado en formato `F-000001` en lista, editor e impresión.

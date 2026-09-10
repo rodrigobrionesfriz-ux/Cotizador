@@ -258,6 +258,15 @@ tbody.addEventListener("click", (e) => {
   if (cot) abrirEditor(cot);
 });
 
+// Abre una cotización en el editor desde otro módulo (p. ej. las tarjetas del Resumen).
+export function abrirCotizacionPorId(id) {
+  const cot = cotizaciones.find((c) => c.id === id);
+  if (!cot) return;
+  const navBtn = document.querySelector('.nav-item[data-view="cotizaciones"]');
+  if (navBtn) navBtn.click(); // cambia a la vista de Cotizaciones
+  abrirEditor(cot);
+}
+
 // ================= NAVEGACIÓN LISTA <-> EDITOR =================
 
 btnNueva.addEventListener("click", () => abrirEditor(null));
