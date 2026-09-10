@@ -211,7 +211,12 @@
 
         <div class="editor-grid">
           <label>Cliente *
-            <select id="cot-cliente" required></select>
+            <div class="combo-wrap">
+              <input type="text" id="cot-cliente-search" class="combo-input" placeholder="Buscar por nombre o RUT…" autocomplete="off">
+              <input type="hidden" id="cot-cliente" required>
+              <div id="cot-cliente-dropdown" class="combo-dropdown hidden"></div>
+            </div>
+            <button type="button" id="btn-nuevo-cliente-inline" class="link-btn combo-add-link">+ Nuevo cliente</button>
           </label>
           <label>Referencia de obra (texto libre)
             <input type="text" id="cot-obra" placeholder="Opcional">
@@ -232,9 +237,14 @@
         <h4 class="section-label">Ítems</h4>
 
         <div class="item-picker">
-          <select id="picker-item"></select>
+          <div class="combo-wrap combo-wrap-flex">
+            <input type="text" id="picker-item-search" class="combo-input" placeholder="Buscar por código o descripción…" autocomplete="off">
+            <input type="hidden" id="picker-item">
+            <div id="picker-item-dropdown" class="combo-dropdown hidden"></div>
+          </div>
           <input type="number" id="picker-cantidad" min="1" value="1" placeholder="Cant.">
           <button id="btn-agregar-item" type="button" class="btn btn-ghost">+ Agregar</button>
+          <button id="btn-nuevo-item-inline" type="button" class="btn btn-ghost">+ Nuevo ítem</button>
         </div>
 
         <div class="table-wrap">
