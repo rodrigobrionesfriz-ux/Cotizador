@@ -1,4 +1,6 @@
 import { db } from "./firebase-config.js";
+import { abrirNuevoClienteDesdeExterno } from "./clientes.js";
+import { abrirNuevoItemDesdeExterno } from "./catalogo.js";
 import {
   collection,
   addDoc,
@@ -37,6 +39,8 @@ const textareaObs = document.getElementById("cot-observaciones");
 const pickerItem = document.getElementById("picker-item");
 const pickerCantidad = document.getElementById("picker-cantidad");
 const btnAgregarItem = document.getElementById("btn-agregar-item");
+const btnNuevoClienteInline = document.getElementById("btn-nuevo-cliente-inline");
+const btnNuevoItemInline = document.getElementById("btn-nuevo-item-inline");
 const itemsTbody = document.getElementById("cot-items-tbody");
 const itemsEmpty = document.getElementById("cot-items-empty");
 
@@ -83,28 +87,108 @@ window.addEventListener("auth-ready", () => {
     clientesActivos = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((c) => c.estado !== "inactivo");
-    poblarSelectClientes();
   }, (err) => console.error("Error leyendo clientes:", err));
 
   onSnapshot(collection(db, "catalogo"), (snap) => {
     catalogoActivo = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
       .filter((it) => it.estado !== "inactivo");
-    poblarSelectCatalogo();
   }, (err) => console.error("Error leyendo catálogo:", err));
 }, { once: true });
 
-function poblarSelectClientes() {
-  const seleccionado = selectCliente.value;
-  selectCliente.innerHTML = '<option value="">Selecciona un cliente…</option>' +
-    clientesActivos.map((c) => `<option value="${c.id}">${escapeHtml(c.razonSocial)} — ${escapeHtml(c.rut || "")}</option>`).join("");
-  if (seleccionado) selectCliente.value = seleccionado;
+// ---------- Combobox buscable reutilizable (cliente e ítem) ----------
+function crearCombobox({ searchInputId, hiddenInputId, dropdownId, obtenerOpciones, renderEtiqueta }) {
+  const searchEl = document.getElementById(searchInputId);
+  const hiddenEl = document.getElementById(hiddenInputId);
+  const dropdownEl = document.getElementById(dropdownId);
+
+  function mostrar(filtro) {
+    const opciones = obtenerOpciones().filter((o) => renderEtiqueta(o).toLowerCase().includes(filtro.toLowerCase()));
+    dropdownEl.innerHTML = opciones.length
+      ? opciones.slice(0, 60).map((o) => `<div class="combo-option" data-id="${o.id}">${escapeHtml(renderEtiqueta(o))}</div>`).join("")
+      : '<div class="combo-empty">Sin resultados</div>';
+    dropdownEl.classList.remove("hidden");
+  }
+
+  searchEl.addEventListener("focus", () => mostrar(searchEl.value));
+  searchEl.addEventListener("input", () => {
+    hiddenEl.value = "";
+    mostrar(searchEl.value);
+  });
+  dropdownEl.addEventListener("click", (e) => {
+    const opt = e.target.closest(".combo-option");
+    if (!opt) return;
+    const item = obtenerOpciones().find((o) => o.id === opt.dataset.id);
+    if (item) {
+      hiddenEl.value = item.id;
+      searchEl.value = renderEtiqueta(item);
+    }
+    dropdownEl.classList.add("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    if (e.target !== searchEl && !dropdownEl.contains(e.target)) dropdownEl.classList.add("hidden");
+  });
+
+  return {
+    setSeleccion(item) {
+      hiddenEl.value = item ? item.id : "";
+      searchEl.value = item ? renderEtiqueta(item) : "";
+      dropdownEl.classList.add("hidden");
+    }
+  };
 }
 
-function poblarSelectCatalogo() {
-  pickerItem.innerHTML = '<option value="">Selecciona un ítem…</option>' +
-    catalogoActivo.map((it) => `<option value="${it.id}">${escapeHtml(it.codigo)} — ${escapeHtml(it.descripcion)}</option>`).join("");
-}
+const comboCliente = crearCombobox({
+  searchInputId: "cot-cliente-search",
+  hiddenInputId: "cot-cliente",
+  dropdownId: "cot-cliente-dropdown",
+  obtenerOpciones: () => clientesActivos,
+  renderEtiqueta: (c) => `${c.razonSocial}${c.rut ? " — " + c.rut : ""}`
+});
+
+const comboItem = crearCombobox({
+  searchInputId: "picker-item-search",
+  hiddenInputId: "picker-item",
+  dropdownId: "picker-item-dropdown",
+  obtenerOpciones: () => catalogoActivo,
+  renderEtiqueta: (it) => `${it.codigo} — ${it.descripcion}`
+});
+
+// ---------- Creación rápida de cliente/ítem desde la cotización ----------
+let esperandoNuevoCliente = false;
+let esperandoNuevoItem = false;
+
+btnNuevoClienteInline.addEventListener("click", () => {
+  esperandoNuevoCliente = true;
+  abrirNuevoClienteDesdeExterno();
+});
+
+btnNuevoItemInline.addEventListener("click", () => {
+  esperandoNuevoItem = true;
+  abrirNuevoItemDesdeExterno();
+});
+
+window.addEventListener("cliente-guardado", (e) => {
+  if (!esperandoNuevoCliente || !e.detail.esNuevo) return;
+  esperandoNuevoCliente = false;
+  comboCliente.setSeleccion({ id: e.detail.id, razonSocial: e.detail.razonSocial, rut: e.detail.rut });
+});
+
+window.addEventListener("item-guardado", (e) => {
+  if (!esperandoNuevoItem || !e.detail.esNuevo) return;
+  esperandoNuevoItem = false;
+  lineaItems.push({
+    itemId: e.detail.id,
+    codigo: e.detail.codigo,
+    descripcion: e.detail.descripcion,
+    unidad: e.detail.unidad,
+    cantidad: 1,
+    precio: e.detail.precio || 0,
+    costo: e.detail.costo || 0,
+    descuentoItem: 0
+  });
+  renderItems();
+});
 
 let obrasDisponibles = [];
 window.addEventListener("obras-actualizadas", (e) => {
@@ -176,7 +260,8 @@ function abrirEditor(cot) {
     editandoId = cot.id;
     editandoFolio = cot.folio;
     folioLabel.textContent = `Cotización N° ${cot.folio}`;
-    selectCliente.value = cot.clienteId || "";
+    const clienteExistente = clientesActivos.find((c) => c.id === cot.clienteId);
+    comboCliente.setSeleccion(clienteExistente || (cot.clienteId ? { id: cot.clienteId, razonSocial: cot.clienteNombre, rut: cot.clienteRut } : null));
     inputObra.value = cot.obraReferencia || "";
     selectObraId.value = cot.obraId || "";
     inputFecha.value = cot.fecha || "";
@@ -188,7 +273,7 @@ function abrirEditor(cot) {
     lineaItems = (cot.items || []).map((it) => ({ ...it }));
   } else {
     folioLabel.textContent = "Nueva cotización (folio se asigna al guardar)";
-    selectCliente.value = "";
+    comboCliente.setSeleccion(null);
     inputObra.value = "";
     selectObraId.value = "";
     inputFecha.value = new Date().toISOString().slice(0, 10);
@@ -231,7 +316,7 @@ btnAgregarItem.addEventListener("click", () => {
     descuentoItem: 0
   });
 
-  pickerItem.value = "";
+  comboItem.setSeleccion(null);
   pickerCantidad.value = 1;
   renderItems();
 });

@@ -81,12 +81,14 @@ searchInput.addEventListener("input", () => {
 });
 
 // ---------- Abrir modal: nuevo ----------
-btnNuevo.addEventListener("click", () => {
+export function abrirNuevoClienteDesdeExterno() {
   form.reset();
   document.getElementById("cliente-id").value = "";
   modalTitle.textContent = "Nuevo cliente";
   modal.classList.remove("hidden");
-});
+}
+
+btnNuevo.addEventListener("click", abrirNuevoClienteDesdeExterno);
 
 // ---------- Abrir modal: editar ----------
 tbody.addEventListener("click", (e) => {
@@ -135,9 +137,11 @@ form.addEventListener("submit", async (e) => {
   try {
     if (id) {
       await updateDoc(doc(db, "clientes", id), data);
+      window.dispatchEvent(new CustomEvent("cliente-guardado", { detail: { id, esNuevo: false, ...data } }));
     } else {
       data.createdAt = serverTimestamp();
-      await addDoc(collection(db, "clientes"), data);
+      const docRef = await addDoc(collection(db, "clientes"), data);
+      window.dispatchEvent(new CustomEvent("cliente-guardado", { detail: { id: docRef.id, esNuevo: true, ...data } }));
     }
     modal.classList.add("hidden");
   } catch (err) {

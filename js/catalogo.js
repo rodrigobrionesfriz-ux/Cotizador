@@ -96,13 +96,15 @@ searchInput.addEventListener("input", () => {
 });
 
 // ---------- Abrir modal: nuevo ----------
-btnNuevo.addEventListener("click", () => {
+export function abrirNuevoItemDesdeExterno() {
   form.reset();
   document.getElementById("item-id").value = "";
   document.getElementById("item-afectoIva").checked = true;
   modalTitle.textContent = "Nuevo ítem";
   modal.classList.remove("hidden");
-});
+}
+
+btnNuevo.addEventListener("click", abrirNuevoItemDesdeExterno);
 
 // ---------- Abrir modal: editar ----------
 tbody.addEventListener("click", (e) => {
@@ -149,9 +151,11 @@ form.addEventListener("submit", async (e) => {
   try {
     if (id) {
       await updateDoc(doc(db, "catalogo", id), data);
+      window.dispatchEvent(new CustomEvent("item-guardado", { detail: { id, esNuevo: false, ...data } }));
     } else {
       data.createdAt = serverTimestamp();
-      await addDoc(collection(db, "catalogo"), data);
+      const docRef = await addDoc(collection(db, "catalogo"), data);
+      window.dispatchEvent(new CustomEvent("item-guardado", { detail: { id: docRef.id, esNuevo: true, ...data } }));
     }
     modal.classList.add("hidden");
   } catch (err) {
