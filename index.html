@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizaciones · Electricidad y Obras Civiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-mark">⌁</div>
+    <h1>Cotizaciones</h1>
+    <p class="login-sub">Electricidad y Obras Civiles</p>
+    <form id="login-form">
+      <label>Correo
+        <input type="email" id="login-email" required autocomplete="username">
+      </label>
+      <label>Contraseña
+        <input type="password" id="login-password" required autocomplete="current-password">
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+      <p id="login-error" class="login-error"></p>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+
+  <aside class="sidebar">
+    <div class="sidebar-grid"></div>
+    <div class="brand">
+      <span class="brand-mark">⌁</span>
+      <div>
+        <div class="brand-title">Cotizaciones</div>
+        <div class="brand-sub">Elec. &amp; Obras Civiles</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">▦</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="clientes">
+        <span class="nav-icon">◧</span> Clientes
+      </button>
+      <button class="nav-item" data-view="catalogo">
+        <span class="nav-icon">▤</span> Catálogo
+      </button>
+      <button class="nav-item" data-view="cotizaciones">
+        <span class="nav-icon">▥</span> Cotizaciones
+      </button>
+      <button class="nav-item" data-view="obras">
+        <span class="nav-icon">◫</span> Obras
+      </button>
+      <button class="nav-item" data-view="facturacion">
+        <span class="nav-icon">▧</span> Facturación
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div id="user-email" class="user-email"></div>
+      <button id="logout-btn" class="link-btn">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="topbar">
+      <h2 id="view-title">Dashboard</h2>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view active">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Cotizaciones activas</div>
+          <div class="stat-value">—</div>
+        </div>
+        <div class="stat-card accent-amber">
+          <div class="stat-label">Pendientes de respuesta</div>
+          <div class="stat-value">—</div>
+        </div>
+        <div class="stat-card accent-green">
+          <div class="stat-label">Aceptadas del mes</div>
+          <div class="stat-value">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Por cobrar</div>
+          <div class="stat-value">—</div>
+        </div>
+      </div>
+      <div class="empty-state">
+        <p>El dashboard se activa cuando existan cotizaciones cargadas.</p>
+        <p class="muted">Este panel se conecta en la siguiente fase, junto con Cotizaciones.</p>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section id="view-clientes" class="view">
+      <div class="view-toolbar">
+        <input type="text" id="clientes-search" class="search-input" placeholder="Buscar por nombre o RUT…">
+        <button id="btn-nuevo-cliente" class="btn btn-primary">+ Nuevo cliente</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Razón social</th>
+              <th>RUT</th>
+              <th>Giro</th>
+              <th>Contacto</th>
+              <th>Comuna</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="clientes-tbody">
+            <!-- filas generadas por JS -->
+          </tbody>
+        </table>
+        <div id="clientes-empty" class="empty-state hidden">
+          <p>Aún no hay clientes registrados.</p>
+          <p class="muted">Crea el primero con el botón “+ Nuevo cliente”.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATÁLOGO (placeholder) -->
+    <section id="view-catalogo" class="view">
+      <div class="empty-state">
+        <p>Módulo de Catálogo (productos y servicios).</p>
+        <p class="muted">Se construye en la fase 2, una vez validado Clientes.</p>
+      </div>
+    </section>
+
+    <!-- COTIZACIONES (placeholder) -->
+    <section id="view-cotizaciones" class="view">
+      <div class="empty-state">
+        <p>Módulo de Cotizaciones.</p>
+        <p class="muted">Se construye en la fase 3, sobre Clientes y Catálogo.</p>
+      </div>
+    </section>
+
+    <!-- OBRAS (placeholder) -->
+    <section id="view-obras" class="view">
+      <div class="empty-state">
+        <p>Módulo de Obras / Proyectos (opcional).</p>
+        <p class="muted">Se agrega si se necesita agrupar cotizaciones por obra.</p>
+      </div>
+    </section>
+
+    <!-- FACTURACIÓN (placeholder) -->
+    <section id="view-facturacion" class="view">
+      <div class="empty-state">
+        <p>Módulo de Facturación.</p>
+        <p class="muted">Se conecta después de Cotizaciones (una cotización aceptada genera factura).</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div id="cliente-modal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3 id="cliente-modal-title">Nuevo cliente</h3>
+    <form id="cliente-form">
+      <input type="hidden" id="cliente-id">
+      <div class="form-row">
+        <label>Razón social / Nombre *
+          <input type="text" id="cliente-razonSocial" required>
+        </label>
+        <label>RUT *
+          <input type="text" id="cliente-rut" placeholder="12.345.678-9" required>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Giro
+          <input type="text" id="cliente-giro">
+        </label>
+        <label>Estado
+          <select id="cliente-estado">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Contacto
+          <input type="text" id="cliente-contacto">
+        </label>
+        <label>Teléfono
+          <input type="text" id="cliente-telefono">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Email
+          <input type="email" id="cliente-email">
+        </label>
+        <label>Comuna
+          <input type="text" id="cliente-comuna">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Región
+          <input type="text" id="cliente-region">
+        </label>
+        <label>Dirección
+          <input type="text" id="cliente-direccion">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="btn-cancelar-cliente" class="btn btn-ghost">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cliente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="js/firebase-config.js"></script>
+<script type="module" src="js/auth.js"></script>
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/clientes.js"></script>
+</body>
+</html>
