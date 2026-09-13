@@ -24,6 +24,12 @@ Cotizador/
     ├── resumen.js          # Indicadores del Resumen en tiempo real
     ├── plantilla.js        # Plantilla editable de impresión + constructor del documento
     ├── plantilla-editor.js # Editor visual (arrastrar/soltar) del formato de impresión
+    ├── inv-helpers.js      # Utilidades de Inventario/OC (modal genérico, toast, folios, empresa)
+    ├── productos.js        # Inventario: ficha de producto + stock
+    ├── movimientos.js      # Entradas/salidas/ajustes que actualizan el stock
+    ├── proveedores.js      # Proveedores (usado por la OC)
+    ├── centros-costo.js    # Centros de costo (usado por la OC)
+    ├── ordenes-compra.js   # Órdenes de compra (folio OC-00001, IVA, impresión, ingreso a inventario)
     ├── clientes.js         # CRUD de clientes
     ├── catalogo.js         # CRUD de productos/servicios (incluye calculadora de costo HH)
     ├── cotizaciones.js     # Editor de cotizaciones, folio correlativo e impresión/PDF
@@ -135,8 +141,24 @@ El constructor del documento vive en `plantilla.js` y lo usan tanto la impresió
 
 Con "Usar editor visual" activo y el botón "Abrir editor visual", se abre un lienzo tamaño A4 donde cada elemento del documento es un bloque que se mueve y redimensiona libremente: Logo, Datos de la empresa, Título, Folio, Fecha, Ficha del cliente, Tabla de ítems, Totales, Observaciones, Condiciones, Vigencia y bloques de Texto libre (para "espacios de detalles"). Por bloque se ajusta fuente, tamaño, color, alineación y negrita/cursiva. El diseño se guarda en `configuracion/plantillaCotizacion` bajo `layout` con la bandera `usarLayout`. La impresión (`plantilla.js`) usa ese layout cuando `usarLayout` está activo; si no, usa el formato por opciones. Todo vive en `plantilla-editor.js`, que también aporta el renderizador del layout usado al imprimir.
 
+## Inventario y Órdenes de Compra (integrado desde SCI)
+
+Módulos portados desde el SCI a la arquitectura del Cotizador (Firestore por empresa, mismo shell de UI). Alcance acotado a: productos + stock + movimientos, y órdenes de compra, más proveedores y centros de costo mínimos que la OC necesita.
+
+- **Productos** (`empresas/{id}/productos`): ficha con código interno, EAN, unidad, grupo, stock, stock mínimo, costo, afecto/exento IVA. Indicador de bajo stock. El stock se ajusta desde Movimientos.
+- **Bodegas** (`empresas/{id}/bodegas`) y **stock por bodega**: el stock se guarda por bodega en cada producto (`stockPorBodega`) más un total (`stock`). La ficha del producto muestra el desglose por bodega.
+- **Movimientos** (`empresas/{id}/movimientos`): Entrada (+), Salida (−), Ajuste (+/−) sobre una bodega, y **Traspaso** (bodega origen → destino). Folio MOV-00001. Al registrar, ajusta el stock por bodega y el total (batch con `increment`); anular revierte el efecto.
+- Buscador **dinámico** de productos (código o descripción) en las líneas de OC y Movimientos, con creación de producto al vuelo.
+- **Órdenes de Compra** (`empresas/{id}/ordenescompra`): folio correlativo **OC-00001**, proveedor, contacto, cotización, forma de pago, centro de costo (predeterminado y por línea), líneas con producto/descripción/cantidad/precio/otros impuestos, IVA 19% según el producto (respeta exentos), totales, estados EMITIDA/ANULADA. Impresión con membrete de la empresa (iframe, sirve en PC y móvil). Botón "Ingreso a inventario" que crea un movimiento de entrada pre-cargado con las líneas de la OC. Desde una línea se puede crear un producto nuevo en el inventario.
+- **Proveedores** y **Centros de costo**: alta/edición/eliminación básica.
+
+Las OC y los movimientos comparten productos, proveedores y centros de costo de la misma empresa. Las reglas de Firestore ya cubren estas colecciones (viven bajo `empresas/{empresaId}/…`), así que **no hay que volver a publicar reglas**.
+
 ## Cambios recientes
 
+- **Multibodega con traspasos**: módulo Bodegas, stock por bodega en cada producto, y tipo de movimiento Traspaso (origen → destino).
+- **Buscador dinámico de productos** (autocompletado por código o descripción) en las líneas de Órdenes de Compra y Movimientos, con opción de crear un producto nuevo desde la búsqueda.
+- **Inventario + Órdenes de Compra**: nuevos módulos Productos, Movimientos, Órdenes de compra, Proveedores y Centros de costo, integrados a la app multi-empresa.
 - **Móvil**: la página nunca desborda a lo ancho; tablas con scroll horizontal, modales y editor con scroll vertical, toolbars y buscadores a ancho completo, tarjetas del Resumen en una columna en pantallas muy chicas.
 - Al cambiar de usuario la app se recarga sola para partir con permisos, módulo Administración y datos de la empresa correctos (antes había que limpiar caché).
 - La "Vista previa" del formato refleja el layout del editor visual guardado.

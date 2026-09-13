@@ -81,6 +81,24 @@
       <button class="nav-item" data-view="facturacion">
         <span class="nav-icon">▧</span> Facturación
       </button>
+      <button class="nav-item" data-view="productos">
+        <span class="nav-icon">▨</span> Productos
+      </button>
+      <button class="nav-item" data-view="movimientos">
+        <span class="nav-icon">⇅</span> Movimientos
+      </button>
+      <button class="nav-item" data-view="bodegas">
+        <span class="nav-icon">▦</span> Bodegas
+      </button>
+      <button class="nav-item" data-view="ordenes-compra">
+        <span class="nav-icon">🧾</span> Órdenes de compra
+      </button>
+      <button class="nav-item" data-view="proveedores">
+        <span class="nav-icon">◨</span> Proveedores
+      </button>
+      <button class="nav-item" data-view="centros-costo">
+        <span class="nav-icon">◔</span> Centros de costo
+      </button>
       <button class="nav-item" data-view="configuracion">
         <span class="nav-icon">⚙</span> Configuración
       </button>
@@ -397,6 +415,27 @@
         </div>
       </div>
     </section>
+
+    <!-- PRODUCTOS (INVENTARIO) -->
+    <section id="view-productos" class="view"></section>
+
+    <!-- MOVIMIENTOS -->
+    <section id="view-movimientos" class="view"></section>
+
+    <!-- BODEGAS -->
+    <section id="view-bodegas" class="view"></section>
+
+    <!-- ÓRDENES DE COMPRA -->
+    <section id="view-ordenes-compra" class="view">
+      <div id="oc-lista"></div>
+      <div id="oc-editor" class="hidden"></div>
+    </section>
+
+    <!-- PROVEEDORES -->
+    <section id="view-proveedores" class="view"></section>
+
+    <!-- CENTROS DE COSTO -->
+    <section id="view-centros-costo" class="view"></section>
 
     <!-- CONFIGURACIÓN -->
     <section id="view-configuracion" class="view">
@@ -849,6 +888,15 @@
   </div>
 </div>
 
+<!-- MODAL GENÉRICO (Inventario / OC) -->
+<div id="gen-modal" class="modal-backdrop hidden">
+  <div class="modal" id="gen-modal-box">
+    <h3 id="gen-modal-title"></h3>
+    <div id="gen-modal-body"></div>
+    <div class="modal-actions" id="gen-modal-footer"></div>
+  </div>
+</div>
+
 <!-- ÁREAS DE IMPRESIÓN (solo visibles al imprimir) -->
 <div id="proforma-print-area"></div>
 <div id="cotizacion-print-area"></div>
@@ -869,5 +917,12 @@
 <script type="module" src="js/obras.js"></script>
 <script type="module" src="js/facturacion.js"></script>
 <script type="module" src="js/configuracion.js"></script>
+<script type="module" src="js/inv-helpers.js"></script>
+<script type="module" src="js/bodegas.js"></script>
+<script type="module" src="js/proveedores.js"></script>
+<script type="module" src="js/centros-costo.js"></script>
+<script type="module" src="js/productos.js"></script>
+<script type="module" src="js/movimientos.js"></script>
+<script type="module" src="js/ordenes-compra.js"></script>
 </body>
 </html>

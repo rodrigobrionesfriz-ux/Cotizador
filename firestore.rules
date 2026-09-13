@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// ============================================================
+// Reglas de seguridad multi-empresa para el Cotizador.
+// Cada usuario solo accede a los datos de SU empresa.
+// Publícalas en Firebase Console → Firestore Database → Reglas.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.email; }
+
+    // Correos con acceso total (crean empresas y asignan usuarios).
+    // Debe coincidir con SUPER_ADMINS en js/tenant.js
+    function superAdmins() { return ['rodrigo.briones.friz@gmail.com']; }
+    function isSuperAdmin() { return signedIn() && email() in superAdmins(); }
+
+    function userPath() { return /databases/$(database)/documents/usuarios/$(request.auth.uid); }
+    function hasUserDoc() { return signedIn() && exists(userPath()); }
+    function userDoc() { return get(userPath()).data; }
+    function myEmpresa() { return hasUserDoc() ? userDoc().empresaId : null; }
+    function isAdmin() { return isSuperAdmin() || (hasUserDoc() && userDoc().rol == 'admin'); }
+
+    // -------- Perfil de usuario --------
+    match /usuarios/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      // Auto-provisión: el propio usuario se registra sin empresa y con rol 'user'.
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.empresaId == null
+                    && request.resource.data.rol == 'user';
+      // Solo un administrador asigna empresa y rol.
+      allow update, delete: if isAdmin();
+    }
+
+    // -------- Empresas y todos sus datos --------
+    match /empresas/{empresaId} {
+      allow read: if signedIn() && (isAdmin() || myEmpresa() == empresaId);
+      allow create, update, delete: if isAdmin();
+
+      // clientes, catalogo, cotizaciones, obras, contadores, configuracion, etc.
+      match /{document=**} {
+        allow read, write: if isSuperAdmin() || (signedIn() && myEmpresa() == empresaId);
+      }
+    }
+  }
+}
