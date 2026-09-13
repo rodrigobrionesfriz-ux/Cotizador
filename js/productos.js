@@ -103,21 +103,28 @@ function renderStockPanel() {
     .filter((m) => m.estado !== "ELIMINADO" && (m.lineas || []).some((l) => l.codigoInterno === stockSel))
     .sort((a, b) => (b.numero || "").localeCompare(a.numero || ""));
 
+  // Deriva clase/tipo compatible con registros nuevos (clase/movTipo) y antiguos (tipo)
+  const claseDe = (m) => m.clase || (m.tipo === "SALIDA" || m.tipo === "TRASPASO" ? "SAL" : "ENT");
+  const esTraspaso = (m) => m.movTipo === "TRASPASO" || m.tipo === "TRASPASO";
+  const bodOrigen = (m) => m.bodegaOrigen || m.bodegaId || "";
+  const bodDestino = (m) => m.bodegaDestino || m.bodegaDestinoId || "";
+  const tipoTxt = (m) => m.movTipoLabel || m.movTipo || m.subtipo || { ENTRADA: "Entrada", SALIDA: "Salida", AJUSTE: "Ajuste", TRASPASO: "Traspaso" }[m.tipo] || m.tipo || "-";
+
   const filas = movs.map((m) => {
     const l = (m.lineas || []).find((x) => x.codigoInterno === stockSel) || {};
     const cant = Number(l.cantidad) || 0;
-    let signo = "", bod = "";
-    if (m.tipo === "ENTRADA") { signo = "+" + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
-    else if (m.tipo === "SALIDA") { signo = "-" + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
-    else if (m.tipo === "AJUSTE") { signo = (cant >= 0 ? "+" : "") + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
-    else { signo = fmtNum(cant, 2); bod = bodegaNombre(m.bodegaOrigen) + " → " + bodegaNombre(m.bodegaDestino); }
-    const badge = m.tipo === "ENTRADA" ? "badge-aceptada" : (m.tipo === "SALIDA" ? "badge-no_aceptada" : (m.tipo === "TRASPASO" ? "badge-vencida" : "badge-enviada"));
+    const oldAjuste = m.tipo === "AJUSTE" && !m.clase;
+    let signo = "", bod = "", badge = "";
+    if (esTraspaso(m)) { signo = fmtNum(cant, 2); bod = bodegaNombre(bodOrigen(m)) + " → " + bodegaNombre(bodDestino(m)); badge = "badge-vencida"; }
+    else if (oldAjuste) { signo = (cant >= 0 ? "+" : "") + fmtNum(cant, 2); bod = bodegaNombre(bodOrigen(m)); badge = "badge-enviada"; }
+    else if (claseDe(m) === "SAL") { signo = "-" + fmtNum(cant, 2); bod = bodegaNombre(bodOrigen(m)); badge = "badge-no_aceptada"; }
+    else { signo = "+" + fmtNum(cant, 2); bod = bodegaNombre(bodOrigen(m)); badge = "badge-aceptada"; }
     return `<tr>
       <td class="cell-mono">${escapeHtml(m.numero || "")}</td>
       <td>${fmtFecha(m.fecha)}</td>
-      <td><span class="badge ${badge}">${escapeHtml(m.tipo)}</span></td>
+      <td><span class="badge ${badge}">${escapeHtml(tipoTxt(m))}</span></td>
       <td style="font-size:12px">${escapeHtml(bod)}</td>
-      <td>${escapeHtml(m.motivo || m.referencia || "-")}</td>
+      <td>${escapeHtml(m.observaciones || m.motivo || m.numeroDoc || "-")}</td>
       <td class="col-num cell-mono">${signo}</td>
     </tr>`;
   }).join("");

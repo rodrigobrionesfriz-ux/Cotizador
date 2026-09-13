@@ -102,6 +102,15 @@ function manejarAtras() {
     }
   }
 
+  // (4b) Editor de movimientos abierto: volver al listado.
+  const movEditor = document.getElementById("mov-editor");
+  if (movEditor && !movEditor.classList.contains("hidden")) {
+    if (typeof window.movRenderLista === "function") {
+      window.movRenderLista();
+      return true;
+    }
+  }
+
   // (5) No estamos en Resumen: volver a Resumen.
   const activo = document.querySelector(".nav-item.active[data-view]");
   if (activo && activo.dataset.view !== "dashboard") {

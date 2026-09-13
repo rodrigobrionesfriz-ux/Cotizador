@@ -88,6 +88,9 @@ export function abrirNuevoClienteDesdeExterno() {
   modalTitle.textContent = "Nuevo cliente";
   modal.classList.remove("hidden");
 }
+// Para módulos que necesitan leer/crear clientes (ej: Movimientos)
+export function getClientes() { return clientes; }
+window.abrirNuevoCliente = abrirNuevoClienteDesdeExterno;
 
 btnNuevo.addEventListener("click", abrirNuevoClienteDesdeExterno);
 
