@@ -3,7 +3,7 @@ import { colE, docE } from "./tenant.js";
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { showModal, closeGenModal, confirmDialog, toast, escapeHtml, fmtMon, fmtNum } from "./inv-helpers.js";
+import { showModal, closeGenModal, confirmDialog, toast, escapeHtml, fmtMon, fmtNum, fmtFecha, attachProductoSearch } from "./inv-helpers.js";
 import { getBodegas, bodegaNombre } from "./bodegas.js";
 
 // ================= PRODUCTOS (INVENTARIO) =================
@@ -15,6 +15,8 @@ let productos = [];
 let filtro = "";
 let soloBajoStock = false;
 let pendingCrear = null; // { onCreated } para creación desde OC
+let movsCache = [];      // movimientos, para el apartado de stock por producto
+let stockSel = "";       // código del producto seleccionado en el apartado
 
 export function getProductos() { return productos; }
 export function getProducto(codigoInterno) { return productos.find((p) => p.codigoInterno === codigoInterno); }
@@ -26,6 +28,12 @@ window.addEventListener("empresa-ready", () => {
     productos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     render();
   }, (err) => console.error("Error leyendo productos:", err));
+
+  // Movimientos para el apartado "Stock por producto"
+  onSnapshot(colE("movimientos"), (snap) => {
+    movsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (stockSel) renderStockPanel();
+  }, (err) => console.error("Error leyendo movimientos (productos):", err));
 }, { once: true });
 
 function esBajoStock(p) {
@@ -59,12 +67,74 @@ function render() {
         <tbody>${rows.map(rowHtml).join("")}</tbody>
       </table>
       ${rows.length ? "" : `<div class="empty-state"><p>Aún no hay productos.</p><p class="muted">Crea el primero con "+ Nuevo producto".</p></div>`}
+    </div>
+
+    <h4 class="section-label section-label-spaced">Stock por producto</h4>
+    <div class="config-card">
+      <label style="font-size:12px;color:var(--text-muted)">Buscar producto (código o descripción)
+        <input type="text" class="cell-mono" id="prod-stock-search" placeholder="🔍 Escribe para buscar…" autocomplete="off" value="${escapeHtml(stockSel)}" style="width:100%;margin-top:6px">
+      </label>
+      <div id="prod-stock-panel" style="margin-top:12px"></div>
     </div>`;
 
   const inp = document.getElementById("prod-search");
   if (inp) inp.addEventListener("input", () => { filtro = inp.value; render(); });
   const b = document.getElementById("prod-bajo");
   if (b) b.addEventListener("click", () => { soloBajoStock = !soloBajoStock; render(); });
+
+  // Apartado stock por producto: buscador dinámico
+  attachProductoSearch("prod-stock-search", getProductos, (cod) => { stockSel = cod; render(); }, {});
+  renderStockPanel();
+}
+
+// ---------- Apartado: stock por producto + sus movimientos (excepto eliminados) ----------
+function renderStockPanel() {
+  const panel = document.getElementById("prod-stock-panel");
+  if (!panel) return;
+  const p = getProducto(stockSel);
+  if (!p) { panel.innerHTML = `<div class="muted" style="font-size:12.5px">Selecciona un producto para ver su stock y movimientos.</div>`; return; }
+
+  const servicio = p.controlStock === false;
+  const spb = p.stockPorBodega || {};
+  const chips = Object.entries(spb).filter(([, v]) => (Number(v) || 0) !== 0)
+    .map(([bid, v]) => `<span class="badge badge-activo" style="margin-right:6px">${escapeHtml(bodegaNombre(bid))}: ${fmtNum(v, 2)}</span>`).join("");
+
+  const movs = movsCache
+    .filter((m) => m.estado !== "ELIMINADO" && (m.lineas || []).some((l) => l.codigoInterno === stockSel))
+    .sort((a, b) => (b.numero || "").localeCompare(a.numero || ""));
+
+  const filas = movs.map((m) => {
+    const l = (m.lineas || []).find((x) => x.codigoInterno === stockSel) || {};
+    const cant = Number(l.cantidad) || 0;
+    let signo = "", bod = "";
+    if (m.tipo === "ENTRADA") { signo = "+" + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
+    else if (m.tipo === "SALIDA") { signo = "-" + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
+    else if (m.tipo === "AJUSTE") { signo = (cant >= 0 ? "+" : "") + fmtNum(cant, 2); bod = bodegaNombre(m.bodegaId); }
+    else { signo = fmtNum(cant, 2); bod = bodegaNombre(m.bodegaOrigen) + " → " + bodegaNombre(m.bodegaDestino); }
+    const badge = m.tipo === "ENTRADA" ? "badge-aceptada" : (m.tipo === "SALIDA" ? "badge-no_aceptada" : (m.tipo === "TRASPASO" ? "badge-vencida" : "badge-enviada"));
+    return `<tr>
+      <td class="cell-mono">${escapeHtml(m.numero || "")}</td>
+      <td>${fmtFecha(m.fecha)}</td>
+      <td><span class="badge ${badge}">${escapeHtml(m.tipo)}</span></td>
+      <td style="font-size:12px">${escapeHtml(bod)}</td>
+      <td>${escapeHtml(m.motivo || m.referencia || "-")}</td>
+      <td class="col-num cell-mono">${signo}</td>
+    </tr>`;
+  }).join("");
+
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <div><strong class="cell-mono">${escapeHtml(p.codigoInterno || "")}</strong> · ${escapeHtml(p.descripcion || "")}</div>
+      <div>${servicio ? '<span class="muted">Servicio (sin stock)</span>' : `Stock total: <strong>${fmtNum(p.stock || 0, 2)}</strong> ${escapeHtml(p.unidadMedida || "")}`}</div>
+    </div>
+    ${servicio ? "" : `<div style="margin-bottom:10px">${chips || '<span class="muted" style="font-size:12px">Sin stock por bodega.</span>'}</div>`}
+    <div class="table-wrap table-scroll">
+      <table class="data-table">
+        <thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Bodega</th><th>Motivo / Ref.</th><th class="col-num">Cantidad</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      ${movs.length ? "" : `<div class="empty-state" style="padding:24px"><p>Sin movimientos para este producto.</p></div>`}
+    </div>`;
 }
 
 function rowHtml(p) {

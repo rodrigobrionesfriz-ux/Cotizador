@@ -9,13 +9,16 @@ import { getBodegas, bodegaNombre } from "./bodegas.js";
 
 // ================= MOVIMIENTOS DE INVENTARIO (multibodega) =================
 // ENTRADA (+), SALIDA (-), AJUSTE (+/-) sobre una bodega; TRASPASO mueve stock
-// de una bodega a otra. El stock se guarda por bodega en el producto
-// (stockPorBodega) más un total (stock). Anular revierte el efecto.
+// entre bodegas. Los movimientos se pueden editar y eliminar (eliminar = marca
+// ELIMINADO y revierte su efecto; se conserva el registro pero no aparece).
+// Nunca se permite dejar stock negativo en ninguna bodega.
 
 const TIPOS = { ENTRADA: "Entrada", SALIDA: "Salida", AJUSTE: "Ajuste", TRASPASO: "Traspaso" };
 let movimientos = [];
 let filtro = "";
 let draft = null;
+
+export function getMovimientos() { return movimientos; }
 
 const cont = () => document.getElementById("view-movimientos");
 
@@ -28,16 +31,17 @@ window.addEventListener("empresa-ready", () => {
 
 function bodegasActivas() { return getBodegas().filter((b) => b.activo !== false); }
 function primeraBodega() { const b = bodegasActivas()[0]; return b ? b.id : ""; }
+function movGet(id) { return movimientos.find((m) => m.id === id); }
 
 function bodegaTexto(m) {
   if (m.tipo === "TRASPASO") return bodegaNombre(m.bodegaOrigen) + " → " + bodegaNombre(m.bodegaDestino);
   return bodegaNombre(m.bodegaId);
 }
 
-// ---------- Lista ----------
+// ---------- Lista (oculta los eliminados) ----------
 function render() {
   const el = cont(); if (!el) return;
-  let rows = movimientos.slice();
+  let rows = movimientos.filter((m) => m.estado !== "ELIMINADO");
   if (filtro) { const s = filtro.toLowerCase(); rows = rows.filter((m) => ((m.numero || "") + " " + (m.tipo || "") + " " + (m.motivo || "") + " " + (m.referencia || "")).toLowerCase().includes(s)); }
   el.innerHTML = `
     <div class="view-toolbar">
@@ -51,7 +55,7 @@ function render() {
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Bodega</th><th>Motivo / Ref.</th><th class="col-num">Ítems</th><th>Estado</th></tr></thead>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Bodega</th><th>Motivo / Ref.</th><th class="col-num">Ítems</th><th></th></tr></thead>
         <tbody>${rows.map(rowHtml).join("")}</tbody>
       </table>
       ${rows.length ? "" : `<div class="empty-state"><p>Aún no hay movimientos.</p></div>`}
@@ -61,16 +65,15 @@ function render() {
 }
 
 function rowHtml(m) {
-  const anulado = m.estado === "ANULADO";
   const badge = m.tipo === "ENTRADA" ? "badge-aceptada" : (m.tipo === "SALIDA" ? "badge-no_aceptada" : (m.tipo === "TRASPASO" ? "badge-vencida" : "badge-enviada"));
-  return `<tr style="cursor:pointer;${anulado ? "opacity:.55" : ""}" onclick="movVer('${m.id}')">
+  return `<tr style="cursor:pointer" onclick="movVer('${m.id}')">
     <td class="cell-mono"><strong>${escapeHtml(m.numero || "")}</strong></td>
     <td>${fmtFecha(m.fecha)}</td>
     <td><span class="badge ${badge}">${TIPOS[m.tipo] || m.tipo}</span></td>
     <td style="font-size:12px">${escapeHtml(bodegaTexto(m))}</td>
     <td>${escapeHtml(m.motivo || m.referencia || "-")}</td>
     <td class="col-num">${(m.lineas || []).length}</td>
-    <td>${anulado ? '<span class="badge badge-inactivo">Anulado</span>' : '<span class="badge badge-activo">Vigente</span>'}</td>
+    <td class="row-actions" onclick="event.stopPropagation()"><button onclick="movEditar('${m.id}')">Editar</button></td>
   </tr>`;
 }
 
@@ -122,7 +125,6 @@ function renderLineas() {
       </tr>`;
     }).join("")}</tbody></table>`;
   draft.lineas.forEach((l, i) => {
-    // Solo productos con control de stock (los servicios no entran a inventario)
     attachProductoSearch("mov-prod-" + i, () => getProductos().filter((p) => p.controlStock !== false),
       (cod) => { draft.lineas[i].codigoInterno = cod; renderLineas(); },
       { onCreate: (q) => { const esEAN = /^\d{8,14}$/.test(q || ""); crearProductoDesdeExterno(esEAN ? { codigoEAN: q } : { descripcion: q || "" }, (codigo) => { draft.lineas[i].codigoInterno = codigo; renderLineas(); }); } });
@@ -137,12 +139,23 @@ function capturarHeader() {
 }
 
 window.movNuevo = function (tipo) {
-  draft = { tipo: tipo || "ENTRADA", fecha: new Date().toISOString().slice(0, 10), motivo: "", referencia: "", bodegaId: primeraBodega(), bodegaOrigen: "", bodegaDestino: "", lineas: [{}] };
+  draft = { editId: null, tipo: tipo || "ENTRADA", fecha: new Date().toISOString().slice(0, 10), motivo: "", referencia: "", bodegaId: primeraBodega(), bodegaOrigen: "", bodegaDestino: "", lineas: [{}] };
+  abrirForm();
+};
+window.movEditar = function (id) {
+  const m = movGet(id); if (!m) return;
+  draft = {
+    editId: id, tipo: m.tipo, fecha: m.fecha || new Date().toISOString().slice(0, 10),
+    motivo: m.motivo || "", referencia: m.referencia || "",
+    bodegaId: m.bodegaId || "", bodegaOrigen: m.bodegaOrigen || "", bodegaDestino: m.bodegaDestino || "",
+    lineas: (m.lineas || []).map((l) => ({ codigoInterno: l.codigoInterno, cantidad: l.cantidad }))
+  };
+  if (!draft.lineas.length) draft.lineas = [{}];
   abrirForm();
 };
 export function nuevoDesdeOC(oc) {
   draft = {
-    tipo: "ENTRADA", fecha: new Date().toISOString().slice(0, 10), motivo: "Compra", referencia: "OC " + (oc.folio || ""),
+    editId: null, tipo: "ENTRADA", fecha: new Date().toISOString().slice(0, 10), motivo: "Compra", referencia: "OC " + (oc.folio || ""),
     bodegaId: primeraBodega(), bodegaOrigen: "", bodegaDestino: "",
     lineas: (oc.lineas || []).filter((l) => l.codigoInterno).map((l) => ({ codigoInterno: l.codigoInterno, cantidad: l.cantidad }))
   };
@@ -152,9 +165,9 @@ export function nuevoDesdeOC(oc) {
 window.nuevoMovDesdeOC = nuevoDesdeOC;
 
 function abrirForm() {
-  showModal("Nuevo movimiento", formBody(),
+  showModal(draft.editId ? "Editar movimiento" : "Nuevo movimiento", formBody(),
     `<button class="btn btn-ghost" onclick="closeGenModal()">Cancelar</button>
-     <button class="btn btn-primary" onclick="movGuardar()">Registrar movimiento</button>`, true);
+     <button class="btn btn-primary" onclick="movGuardar()">${draft.editId ? "Guardar cambios" : "Registrar movimiento"}</button>`, true);
   renderLineas();
 }
 
@@ -163,7 +176,7 @@ window.movAddLinea = function () { capturarHeader(); draft.lineas.push({}); rend
 window.movRemoveLinea = function (i) { draft.lineas.splice(i, 1); if (!draft.lineas.length) draft.lineas.push({}); renderLineas(); };
 window.movSetCant = function (i, v) { draft.lineas[i].cantidad = v; };
 
-// Deltas de stock por producto: { prodId: { 'stockPorBodega.<bod>': delta, __total: n } }
+// Efecto de un movimiento en el stock: { prodId: { 'stockPorBodega.<bod>': delta, __total } }
 function computeUpdates(m) {
   const updates = {};
   const add = (cod, bodegaId, d) => {
@@ -180,16 +193,49 @@ function computeUpdates(m) {
     if (m.tipo === "TRASPASO") { add(l.codigoInterno, m.bodegaOrigen, -Math.abs(cant)); add(l.codigoInterno, m.bodegaDestino, Math.abs(cant)); }
     else if (m.tipo === "SALIDA") { add(l.codigoInterno, m.bodegaId, -Math.abs(cant)); }
     else if (m.tipo === "AJUSTE") { add(l.codigoInterno, m.bodegaId, cant); }
-    else { add(l.codigoInterno, m.bodegaId, Math.abs(cant)); } // ENTRADA
+    else { add(l.codigoInterno, m.bodegaId, Math.abs(cant)); }
   });
   return updates;
 }
-function aplicarUpdates(batch, updates, reverse) {
-  Object.entries(updates).forEach(([prodId, obj]) => {
+
+// Efecto neto = nuevo - anterior (para crear/editar/eliminar)
+function combinarUpdates(newReg, oldReg) {
+  const net = {};
+  const acc = (updates, sign) => {
+    Object.entries(updates).forEach(([pid, obj]) => {
+      net[pid] = net[pid] || { __total: 0 };
+      Object.entries(obj).forEach(([k, v]) => {
+        if (k === "__total") { net[pid].__total += sign * v; return; }
+        net[pid][k] = (net[pid][k] || 0) + sign * v;
+      });
+    });
+  };
+  if (newReg) acc(computeUpdates(newReg), 1);
+  if (oldReg) acc(computeUpdates(oldReg), -1);
+  return net;
+}
+
+function validarNet(net) {
+  for (const pid in net) {
+    const p = getProductos().find((x) => x.id === pid);
+    for (const k in net[pid]) {
+      if (k === "__total") continue;
+      const d = net[pid][k];
+      if (d >= 0) continue;
+      const bod = k.slice(k.indexOf(".") + 1);
+      const actual = (p && p.stockPorBodega && p.stockPorBodega[bod]) || 0;
+      if (actual + d < 0) return `Stock insuficiente de ${p ? p.codigoInterno : pid} en ${bodegaNombre(bod)}: disponible ${fmtNum(actual, 2)}, requerido ${fmtNum(-d, 2)}.`;
+    }
+  }
+  return null;
+}
+
+function aplicarNet(batch, net) {
+  Object.entries(net).forEach(([pid, obj]) => {
     const upd = {};
-    Object.entries(obj).forEach(([k, v]) => { if (k === "__total") return; upd[k] = increment(reverse ? -v : v); });
-    upd.stock = increment(reverse ? -obj.__total : obj.__total);
-    batch.update(docE("productos", prodId), upd);
+    Object.entries(obj).forEach(([k, v]) => { if (k === "__total") return; if (v !== 0) upd[k] = increment(v); });
+    if (obj.__total !== 0) upd.stock = increment(obj.__total);
+    if (Object.keys(upd).length) batch.update(docE("productos", pid), upd);
   });
 }
 
@@ -212,25 +258,33 @@ window.movGuardar = async function () {
     bodegaDestino: draft.tipo === "TRASPASO" ? (draft.bodegaDestino || "") : "",
     lineas, estado: "VIGENTE"
   };
+
+  const original = draft.editId ? movGet(draft.editId) : null;
+  const net = combinarUpdates(reg, original);
+  const err = validarNet(net);
+  if (err) { toast("Stock insuficiente", err, "error"); return; }
+
   try {
-    const numero = await nextFolio("movimientos", "MOV-", 5);
     const batch = writeBatch(db);
-    const ref = doc(colE("movimientos"));
-    batch.set(ref, { numero, ...reg, createdAt: serverTimestamp(), _mod: Date.now() });
-    aplicarUpdates(batch, computeUpdates(reg), false);
+    if (draft.editId) {
+      batch.update(docE("movimientos", draft.editId), { ...reg, _mod: Date.now() });
+    } else {
+      const numero = await nextFolio("movimientos", "MOV-", 5);
+      const ref = doc(colE("movimientos"));
+      batch.set(ref, { numero, ...reg, createdAt: serverTimestamp(), _mod: Date.now() });
+    }
+    aplicarNet(batch, net);
     await batch.commit();
     closeGenModal();
-    toast("Movimiento registrado", numero + " · " + TIPOS[draft.tipo], "success");
+    toast(draft.editId ? "Movimiento actualizado" : "Movimiento registrado", TIPOS[draft.tipo], "success");
     draft = null;
-  } catch (err) { console.error(err); toast("No se pudo registrar", "", "error"); }
+  } catch (err2) { console.error(err2); toast("No se pudo guardar", "", "error"); }
 };
 
-// ---------- Ver / Anular ----------
+// ---------- Ver / Eliminar ----------
 window.movVer = function (id) {
-  const m = movimientos.find((x) => x.id === id); if (!m) return;
-  const anulado = m.estado === "ANULADO";
+  const m = movGet(id); if (!m) return;
   showModal("Movimiento · " + escapeHtml(m.numero || ""), `
-    ${anulado ? '<div class="muted" style="color:var(--red);margin-bottom:8px">⛔ Movimiento ANULADO</div>' : ""}
     <div class="form-row">
       <label>Fecha<div>${fmtFecha(m.fecha)}</div></label>
       <label>Tipo<div>${TIPOS[m.tipo] || m.tipo}</div></label>
@@ -245,17 +299,21 @@ window.movVer = function (id) {
       <tbody>${(m.lineas || []).map((l) => `<tr><td class="cell-mono">${escapeHtml(l.codigoInterno || "-")}</td><td>${escapeHtml(l.descripcion || "")}</td><td class="col-num">${fmtNum(l.cantidad, 2)}</td></tr>`).join("")}</tbody>
     </table></div>`,
     `<button class="btn btn-ghost" onclick="closeGenModal()">Cerrar</button>
-     ${anulado ? "" : `<button class="btn btn-danger" onclick="movAnular('${m.id}')">⛔ Anular</button>`}`);
+     <button class="btn btn-danger" onclick="movEliminar('${m.id}')">🗑 Eliminar</button>
+     <button class="btn btn-primary" onclick="movEditar('${m.id}')">✏️ Editar</button>`);
 };
 
-window.movAnular = function (id) {
-  const m = movimientos.find((x) => x.id === id); if (!m || m.estado === "ANULADO") return;
-  confirmDialog("Anular movimiento", `¿Anular ${m.numero}? Se revertirá su efecto en el stock.`, async () => {
+window.movEliminar = function (id) {
+  const m = movGet(id); if (!m) return;
+  confirmDialog("Eliminar movimiento", `¿Eliminar ${m.numero}? Se revertirá su efecto en el stock. El registro queda como eliminado.`, async () => {
+    const net = combinarUpdates(null, m); // revertir
+    const err = validarNet(net);
+    if (err) { toast("No se puede eliminar", err, "error"); return; }
     const batch = writeBatch(db);
-    batch.update(docE("movimientos", id), { estado: "ANULADO", _mod: Date.now() });
-    aplicarUpdates(batch, computeUpdates(m), true); // revertir
+    batch.update(docE("movimientos", id), { estado: "ELIMINADO", eliminadoEl: serverTimestamp(), _mod: Date.now() });
+    aplicarNet(batch, net);
     await batch.commit();
     closeGenModal();
-    toast("Movimiento anulado", m.numero);
-  }, "Anular", true);
+    toast("Movimiento eliminado", m.numero);
+  }, "Eliminar", true);
 };
