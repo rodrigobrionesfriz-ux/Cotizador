@@ -25,7 +25,14 @@ window.addEventListener("empresa-ready", () => {
     ordenes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     if (!editor() || editor().classList.contains("hidden")) renderLista();
   }, (err) => console.error("Error leyendo órdenes de compra:", err));
+  // Si se crean proveedores o centros de costo con el editor abierto, refresca los selectores.
+  const refrescar = () => { if (draft && editor() && !editor().classList.contains("hidden")) { capturarHeader(); setTimeout(renderEditor, 60); } };
+  onSnapshot(colE("proveedores"), refrescar);
+  onSnapshot(colE("centrosCosto"), refrescar);
 }, { once: true });
+
+// Abre el formulario de nuevo proveedor sin perder la orden en edición.
+window.ocCrearProveedor = function () { capturarHeader(); if (typeof window.provNuevo === "function") window.provNuevo(); };
 
 function ocGet(id) { return ordenes.find((o) => o.id === id); }
 
@@ -101,7 +108,10 @@ function renderEditor() {
     <div class="editor-grid">
       <label>Fecha *<input type="date" id="oc-fecha" value="${escapeHtml(draft.fecha || "")}"></label>
       <label>Folio<input type="text" value="${escapeHtml(draft.folio || "(automático OC-00001)")}" readonly></label>
-      <label>Proveedor *
+      <label>
+        <span style="display:flex;justify-content:space-between;align-items:center">Proveedor *
+          <button class="btn btn-ghost btn-small" type="button" onclick="event.preventDefault();ocCrearProveedor()">+ Crear</button>
+        </span>
         <select id="oc-prov" onchange="ocSetProveedor(this.value)">
           <option value="">— Seleccione proveedor —</option>
           ${provs.map((p) => `<option value="${p.id}"${draft.proveedorCodigo === p.id ? " selected" : ""}>${escapeHtml(p.razonSocial)}${p.rut ? " · " + escapeHtml(p.rut) : ""}</option>`).join("")}
