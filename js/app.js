@@ -12,6 +12,12 @@ const titles = {
   cotizaciones: "Cotizaciones",
   obras: "Obras",
   facturacion: "Facturación",
+  productos: "Productos",
+  movimientos: "Movimientos",
+  bodegas: "Bodegas",
+  "ordenes-compra": "Órdenes de compra",
+  proveedores: "Proveedores",
+  "centros-costo": "Centros de costo",
   configuracion: "Configuración",
   admin: "Administración"
 };

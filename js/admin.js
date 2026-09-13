@@ -55,7 +55,7 @@ async function eliminarEmpresa(id, nombre) {
     : "";
   if (!confirm(`¿Eliminar la empresa "${nombre}" y TODOS sus datos (clientes, catálogo, cotizaciones, obras, configuración)? Esta acción no se puede deshacer.${aviso}`)) return;
 
-  const subcolecciones = ["clientes", "catalogo", "cotizaciones", "obras", "contadores", "configuracion"];
+  const subcolecciones = ["clientes", "catalogo", "cotizaciones", "obras", "contadores", "configuracion", "productos", "movimientos", "ordenescompra", "proveedores", "centrosCosto", "bodegas"];
   try {
     for (const sub of subcolecciones) {
       const snap = await getDocs(collection(db, "empresas", id, sub));
