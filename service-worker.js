@@ -4,7 +4,7 @@
 // a CDNs externos van siempre a la red (no se interceptan). Sube CACHE_VERSION
 // cuando cambien los archivos para forzar la actualización.
 
-const CACHE_VERSION = "cotizador-v3";
+const CACHE_VERSION = "cotizador-v4";
 const SHELL = [
   "./",
   "./index.html",
