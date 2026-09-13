@@ -69,9 +69,6 @@
       <button class="nav-item" data-view="clientes">
         <span class="nav-icon">◧</span> Clientes
       </button>
-      <button class="nav-item" data-view="catalogo">
-        <span class="nav-icon">▤</span> Catálogo
-      </button>
       <button class="nav-item" data-view="cotizaciones">
         <span class="nav-icon">▥</span> Cotizaciones
       </button>
@@ -178,38 +175,6 @@
         <div id="clientes-empty" class="empty-state hidden">
           <p>Aún no hay clientes registrados.</p>
           <p class="muted">Crea el primero con el botón “+ Nuevo cliente”.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- CATÁLOGO -->
-    <section id="view-catalogo" class="view">
-      <div class="view-toolbar">
-        <input type="text" id="catalogo-search" class="search-input" placeholder="Buscar por código o descripción…">
-        <button id="btn-nuevo-item" class="btn btn-primary">+ Nuevo ítem</button>
-      </div>
-
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Descripción</th>
-              <th>Categoría</th>
-              <th>Unidad</th>
-              <th class="col-num">Costo</th>
-              <th class="col-num">Precio</th>
-              <th>Estado</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="catalogo-tbody">
-            <!-- filas generadas por JS -->
-          </tbody>
-        </table>
-        <div id="catalogo-empty" class="empty-state hidden">
-          <p>Aún no hay productos ni servicios registrados.</p>
-          <p class="muted">Crea el primero con el botón “+ Nuevo ítem”.</p>
         </div>
       </div>
     </section>
@@ -565,16 +530,25 @@
       </div>
 
       <div class="config-card">
-        <h5 class="import-title">Catálogo</h5>
-        <p class="muted field-hint">Descarga la plantilla, complétala y súbela de vuelta. Columnas: Código, Descripción, Categoría, Subcategoría (solo Mano de obra), Unidad, Proveedor, Costo, Precio, Afecto IVA, Estado.</p>
+        <h5 class="import-title">Productos (inventario)</h5>
+        <p class="muted field-hint">Se importan como productos del inventario (misma fuente que usan las cotizaciones). Columnas: Código, Descripción, Categoría, Unidad, Costo, Precio, Afecto IVA, Estado. El stock inicial queda en 0 y se ajusta con Movimientos.</p>
         <div class="import-row">
           <button id="btn-plantilla-catalogo" class="btn btn-ghost btn-small" type="button">Descargar plantilla</button>
         </div>
         <div class="import-row">
           <input type="file" id="import-catalogo-file" accept=".xlsx,.xls,.csv">
-          <button id="btn-import-catalogo" class="btn btn-ghost" type="button">Importar catálogo</button>
+          <button id="btn-import-catalogo" class="btn btn-ghost" type="button">Importar productos</button>
         </div>
         <div id="import-catalogo-log" class="import-log"></div>
+      </div>
+
+      <h4 class="section-label section-label-spaced">Migrar catálogo antiguo</h4>
+      <div class="config-card">
+        <p class="muted field-hint">Copia los productos del catálogo anterior a la colección de Inventario (productos). No duplica los que ya existan (por código). Mano de obra y servicios se marcan como "sin control de stock".</p>
+        <div class="import-row">
+          <button id="btn-migrar-catalogo" class="btn btn-ghost" type="button">Migrar catálogo a Inventario</button>
+        </div>
+        <div id="migrar-catalogo-log" class="import-log"></div>
       </div>
 
     </section>
@@ -910,7 +884,6 @@
 <script type="module" src="js/ui.js"></script>
 <script type="module" src="js/resumen.js"></script>
 <script type="module" src="js/clientes.js"></script>
-<script type="module" src="js/catalogo.js"></script>
 <script type="module" src="js/plantilla-editor.js"></script>
 <script type="module" src="js/plantilla.js"></script>
 <script type="module" src="js/cotizaciones.js"></script>

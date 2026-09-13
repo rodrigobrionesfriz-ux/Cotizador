@@ -156,6 +156,7 @@ Las OC y los movimientos comparten productos, proveedores y centros de costo de 
 
 ## Cambios recientes
 
+- **Productos unificados**: la cotización usa los mismos productos del Inventario (colección `productos`). Se retiró el módulo "Catálogo"; el producto ahora tiene precio de venta y las cotizaciones lo consultan desde ahí. La importación por Excel carga productos del inventario.
 - **Multibodega con traspasos**: módulo Bodegas, stock por bodega en cada producto, y tipo de movimiento Traspaso (origen → destino).
 - **Buscador dinámico de productos** (autocompletado por código o descripción) en las líneas de Órdenes de Compra y Movimientos, con opción de crear un producto nuevo desde la búsqueda.
 - **Inventario + Órdenes de Compra**: nuevos módulos Productos, Movimientos, Órdenes de compra, Proveedores y Centros de costo, integrados a la app multi-empresa.
