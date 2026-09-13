@@ -17,6 +17,9 @@ const elAceptadasMes = document.getElementById("stat-aceptadas-mes");
 const elPorCobrar = document.getElementById("stat-por-cobrar");
 const elMargen = document.getElementById("stat-margen");
 
+// Costo promedio ponderado (PPP): usa costoPromedio si existe, si no el costo.
+const costoPPP = (p) => Number(p && (p.costoPromedio != null ? p.costoPromedio : p.costo)) || 0;
+
 // KPI de inventario y compras
 const elInvBajo = document.getElementById("stat-inv-bajo");
 const elInvValor = document.getElementById("stat-inv-valor");
@@ -230,7 +233,7 @@ function actualizarInventario() {
   const mes = mesActualISO();
   const stockProds = prodCache.filter((p) => p.controlStock !== false);
   const bajo = stockProds.filter((p) => (Number(p.stockMinimo) || 0) > 0 && (Number(p.stock) || 0) <= (Number(p.stockMinimo) || 0)).length;
-  const valor = stockProds.reduce((s, p) => s + (Number(p.stock) || 0) * (Number(p.costo) || 0), 0);
+  const valor = stockProds.reduce((s, p) => s + (Number(p.stock) || 0) * costoPPP(p), 0);
   const ocEmit = ocCache.filter((o) => o.estado !== "ANULADA").length;
   const ocMes = ocCache.filter((o) => o.estado !== "ANULADA" && String(o.fecha || "").slice(0, 7) === mes).reduce((s, o) => s + (o.total || 0), 0);
   if (elInvBajo) elInvBajo.textContent = bajo;
@@ -261,11 +264,11 @@ function abrirDetalleInv(tipo) {
     mostrarTablaInv("Productos bajo stock", `${rows.length} producto(s) en o bajo su mínimo.`, [{ t: "Código" }, { t: "Descripción" }, { t: "Stock", num: true }, { t: "Mínimo", num: true }], filas);
   } else if (tipo === "valor") {
     const rows = prodCache.filter((p) => p.controlStock !== false && (Number(p.stock) || 0) > 0)
-      .map((p) => ({ p, valor: (Number(p.stock) || 0) * (Number(p.costo) || 0) }))
+      .map((p) => ({ p, valor: (Number(p.stock) || 0) * costoPPP(p) }))
       .sort((a, b) => b.valor - a.valor);
     const total = rows.reduce((s, r) => s + r.valor, 0);
-    const filas = rows.map(({ p, valor }) => `<tr><td class="cell-mono">${escapeHtml(p.codigoInterno || "")}</td><td>${escapeHtml(p.descripcion || "")}</td><td class="col-num cell-mono">${fmtNum2(p.stock || 0)}</td><td class="col-num cell-mono">${formatoCLP.format(p.costo || 0)}</td><td class="col-num cell-mono">${formatoCLP.format(valor)}</td></tr>`);
-    mostrarTablaInv("Valor de inventario", `Total valorizado ${formatoCLP.format(total)} (stock × costo).`, [{ t: "Código" }, { t: "Descripción" }, { t: "Stock", num: true }, { t: "Costo", num: true }, { t: "Valor", num: true }], filas);
+    const filas = rows.map(({ p, valor }) => `<tr><td class="cell-mono">${escapeHtml(p.codigoInterno || "")}</td><td>${escapeHtml(p.descripcion || "")}</td><td class="col-num cell-mono">${fmtNum2(p.stock || 0)}</td><td class="col-num cell-mono">${formatoCLP.format(costoPPP(p))}</td><td class="col-num cell-mono">${formatoCLP.format(valor)}</td></tr>`);
+    mostrarTablaInv("Valor de inventario", `Total valorizado ${formatoCLP.format(total)} (stock × costo PPP).`, [{ t: "Código" }, { t: "Descripción" }, { t: "Stock", num: true }, { t: "Costo PPP", num: true }, { t: "Valor", num: true }], filas);
   } else if (tipo === "ocEmitidas" || tipo === "ocMes") {
     let rows = ocCache.filter((o) => o.estado !== "ANULADA");
     if (tipo === "ocMes") rows = rows.filter((o) => String(o.fecha || "").slice(0, 7) === mes);
