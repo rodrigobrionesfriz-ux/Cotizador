@@ -61,11 +61,34 @@
       </div>
     </div>
 
-    <div class="nav-section-label">Módulos</div>
     <nav class="nav">
       <button class="nav-item active" data-view="dashboard">
         <span class="nav-icon">▦</span> Resumen
       </button>
+
+      <div class="nav-section-label">Inventario</div>
+      <button class="nav-item" data-view="productos">
+        <span class="nav-icon">▨</span> Productos
+      </button>
+      <button class="nav-item" data-view="movimientos">
+        <span class="nav-icon">⇅</span> Movimientos
+      </button>
+      <button class="nav-item" data-view="bodegas">
+        <span class="nav-icon">▦</span> Bodegas
+      </button>
+
+      <div class="nav-section-label">Órdenes de compra</div>
+      <button class="nav-item" data-view="ordenes-compra">
+        <span class="nav-icon">🧾</span> Órdenes de compra
+      </button>
+      <button class="nav-item" data-view="proveedores">
+        <span class="nav-icon">◨</span> Proveedores
+      </button>
+      <button class="nav-item" data-view="centros-costo">
+        <span class="nav-icon">◔</span> Centros de costo
+      </button>
+
+      <div class="nav-section-label">Cotizaciones</div>
       <button class="nav-item" data-view="clientes">
         <span class="nav-icon">◧</span> Clientes
       </button>
@@ -78,24 +101,8 @@
       <button class="nav-item" data-view="facturacion">
         <span class="nav-icon">▧</span> Facturación
       </button>
-      <button class="nav-item" data-view="productos">
-        <span class="nav-icon">▨</span> Productos
-      </button>
-      <button class="nav-item" data-view="movimientos">
-        <span class="nav-icon">⇅</span> Movimientos
-      </button>
-      <button class="nav-item" data-view="bodegas">
-        <span class="nav-icon">▦</span> Bodegas
-      </button>
-      <button class="nav-item" data-view="ordenes-compra">
-        <span class="nav-icon">🧾</span> Órdenes de compra
-      </button>
-      <button class="nav-item" data-view="proveedores">
-        <span class="nav-icon">◨</span> Proveedores
-      </button>
-      <button class="nav-item" data-view="centros-costo">
-        <span class="nav-icon">◔</span> Centros de costo
-      </button>
+
+      <div class="nav-section-label">Configuración</div>
       <button class="nav-item" data-view="configuracion">
         <span class="nav-icon">⚙</span> Configuración
       </button>
@@ -119,6 +126,31 @@
 
     <!-- DASHBOARD -->
     <section id="view-dashboard" class="view active">
+      <h4 class="section-label">Inventario y compras</h4>
+      <div class="stat-grid">
+        <div class="stat-card accent-amber stat-card-clickable" data-inv="bajoStock" role="button" tabindex="0">
+          <div class="stat-label">Productos bajo stock</div>
+          <div class="stat-value" id="stat-inv-bajo">—</div>
+          <div class="stat-hint">Ver detalle →</div>
+        </div>
+        <div class="stat-card stat-card-clickable" data-inv="valor" role="button" tabindex="0">
+          <div class="stat-label">Valor de inventario</div>
+          <div class="stat-value" id="stat-inv-valor">—</div>
+          <div class="stat-hint">Ver detalle →</div>
+        </div>
+        <div class="stat-card accent-green stat-card-clickable" data-inv="ocEmitidas" role="button" tabindex="0">
+          <div class="stat-label">Órdenes emitidas</div>
+          <div class="stat-value" id="stat-oc-emitidas">—</div>
+          <div class="stat-hint">Ver detalle →</div>
+        </div>
+        <div class="stat-card stat-card-clickable" data-inv="ocMes" role="button" tabindex="0">
+          <div class="stat-label">Comprado del mes</div>
+          <div class="stat-value" id="stat-oc-mes">—</div>
+          <div class="stat-hint">Ver detalle →</div>
+        </div>
+      </div>
+
+      <h4 class="section-label section-label-spaced">Cotizaciones</h4>
       <div class="stat-grid">
         <div class="stat-card stat-card-clickable" data-metrica="activas" role="button" tabindex="0">
           <div class="stat-label">Cotizaciones activas</div>

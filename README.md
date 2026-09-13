@@ -156,6 +156,8 @@ Las OC y los movimientos comparten productos, proveedores y centros de costo de 
 
 ## Cambios recientes
 
+- **Movimientos editables y eliminables**: se pueden editar y eliminar (eliminar = marca ELIMINADO y revierte el stock; se conserva el registro pero no aparece ni afecta stock). Nunca se permite dejar stock negativo.
+- **Stock por producto** en el módulo Productos: buscador dinámico; al elegir un producto muestra su stock por bodega y todos sus movimientos (excepto los eliminados).
 - **Productos unificados**: la cotización usa los mismos productos del Inventario (colección `productos`). Se retiró el módulo "Catálogo"; el producto ahora tiene precio de venta y las cotizaciones lo consultan desde ahí. La importación por Excel carga productos del inventario.
 - **Multibodega con traspasos**: módulo Bodegas, stock por bodega en cada producto, y tipo de movimiento Traspaso (origen → destino).
 - **Buscador dinámico de productos** (autocompletado por código o descripción) en las líneas de Órdenes de Compra y Movimientos, con opción de crear un producto nuevo desde la búsqueda.
