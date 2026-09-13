@@ -20,6 +20,8 @@ let stockSel = "";       // código del producto seleccionado en el apartado
 
 export function getProductos() { return productos; }
 export function getProducto(codigoInterno) { return productos.find((p) => p.codigoInterno === codigoInterno); }
+// Costo promedio ponderado (PPP): usa costoPromedio si existe, si no el costo de referencia.
+export function pppDe(p) { return Number(p && (p.costoPromedio != null ? p.costoPromedio : p.costo)) || 0; }
 
 const cont = () => document.getElementById("view-productos");
 
@@ -63,7 +65,7 @@ function render() {
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>Código</th><th>Descripción</th><th>UM</th><th>Grupo</th><th class="col-num">Stock</th><th class="col-num">Mínimo</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Código</th><th>Descripción</th><th>UM</th><th>Grupo</th><th class="col-num">Stock</th><th class="col-num">Mínimo</th><th class="col-num">Costo PPP</th><th>Estado</th><th></th></tr></thead>
         <tbody>${rows.map(rowHtml).join("")}</tbody>
       </table>
       ${rows.length ? "" : `<div class="empty-state"><p>Aún no hay productos.</p><p class="muted">Crea el primero con "+ Nuevo producto".</p></div>`}
@@ -132,7 +134,7 @@ function renderStockPanel() {
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px">
       <div><strong class="cell-mono">${escapeHtml(p.codigoInterno || "")}</strong> · ${escapeHtml(p.descripcion || "")}</div>
-      <div>${servicio ? '<span class="muted">Servicio (sin stock)</span>' : `Stock total: <strong>${fmtNum(p.stock || 0, 2)}</strong> ${escapeHtml(p.unidadMedida || "")}`}</div>
+      <div>${servicio ? '<span class="muted">Servicio (sin stock)</span>' : `Stock total: <strong>${fmtNum(p.stock || 0, 2)}</strong> ${escapeHtml(p.unidadMedida || "")}${pppDe(p) ? ` · Costo PPP: <strong>${fmtMon(pppDe(p))}</strong> · Valor: <strong>${fmtMon((Number(p.stock) || 0) * pppDe(p))}</strong>` : ""}`}</div>
     </div>
     ${servicio ? "" : `<div style="margin-bottom:10px">${chips || '<span class="muted" style="font-size:12px">Sin stock por bodega.</span>'}</div>`}
     <div class="table-wrap table-scroll">
@@ -155,6 +157,7 @@ function rowHtml(p) {
     <td>${escapeHtml(p.grupo || "-")}</td>
     <td class="col-num cell-mono" style="${bajo ? "color:var(--red);font-weight:700" : ""}">${servicio ? "—" : fmtNum(p.stock || 0, 2)}</td>
     <td class="col-num cell-mono">${servicio ? "—" : (p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-")}</td>
+    <td class="col-num cell-mono">${pppDe(p) ? fmtMon(pppDe(p)) : "-"}</td>
     <td>${activo ? '<span class="badge badge-activo">Activo</span>' : '<span class="badge badge-inactivo">Inactivo</span>'}</td>
     <td class="row-actions" onclick="event.stopPropagation()"><button onclick="prodEditar('${p.id}')">Editar</button></td>
   </tr>`;
@@ -196,8 +199,12 @@ function formHtml(p, esNuevo) {
       <label>Grupo / familia<input type="text" id="p-grupo" value="${escapeHtml(p.grupo || "")}"></label>
     </div>
     <div class="form-row">
-      <label>Costo neto<input type="number" min="0" step="1" id="p-costo" value="${p.costo != null ? p.costo : ""}"></label>
+      <label>Costo neto<input type="number" min="0" step="1" id="p-costo" value="${p.costo != null ? p.costo : ""}"><div class="muted" style="font-size:11px">${esNuevo ? "Costo de referencia inicial" : "Última compra"}</div></label>
       <label>Precio de venta neto<input type="number" min="0" step="1" id="p-precio" value="${p.precio != null ? p.precio : ""}"><div class="muted" style="font-size:11px">Se usa en las cotizaciones</div></label>
+    </div>
+    <div class="form-row">
+      <label>Costo promedio (PPP)<input type="number" min="0" step="any" id="p-ppp" value="${p.costoPromedio != null ? p.costoPromedio : ""}" ${esNuevo ? "readonly" : ""}><div class="muted" style="font-size:11px">${esNuevo ? "Al crear toma el costo neto." : "Se recalcula solo con las compras. Puedes ajustarlo."}</div></label>
+      <span></span>
     </div>
     <div class="form-row">
       <label class="checkbox-label"><input type="checkbox" id="p-control" ${p.controlStock !== false ? "checked" : ""} onchange="document.getElementById('p-stock-row').style.display=this.checked?'':'none'"> Controla stock</label>
@@ -233,7 +240,8 @@ window.prodVer = function (id) {
     <div class="form-row form-row-full"><label>Descripción<div><strong>${escapeHtml(p.descripcion || "")}</strong></div></label></div>
     <div class="form-row"><label>Unidad<div>${escapeHtml(p.unidadMedida || "-")}</div></label><label>Grupo<div>${escapeHtml(p.grupo || "-")}</div></label></div>
     <div class="form-row"><label>Stock actual<div class="cell-mono"><strong>${p.controlStock === false ? "Servicio (sin stock)" : fmtNum(p.stock || 0, 2)}</strong></div></label><label>Stock mínimo<div class="cell-mono">${p.controlStock === false ? "—" : (p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-")}</div></label></div>
-    <div class="form-row"><label>Costo neto<div>${p.costo ? fmtMon(p.costo) : "-"}</div></label><label>Precio venta<div>${p.precio ? fmtMon(p.precio) : "-"}</div></label></div>
+    <div class="form-row"><label>Costo neto (última compra)<div>${p.costo ? fmtMon(p.costo) : "-"}</div></label><label>Precio venta<div>${p.precio ? fmtMon(p.precio) : "-"}</div></label></div>
+    <div class="form-row"><label>Costo promedio (PPP)<div><strong>${pppDe(p) ? fmtMon(pppDe(p)) : "-"}</strong></div></label><label>Valor en stock<div class="cell-mono">${p.controlStock === false ? "—" : fmtMon((Number(p.stock) || 0) * pppDe(p))}</div></label></div>
     <div class="form-row"><label>IVA<div>${p.aplicaIVA === false ? "Exento" : "Afecto"}</div></label><span></span></div>
     ${stockPorBodegaHtml(p)}`,
     `<button class="btn btn-ghost" onclick="closeGenModal()">Cerrar</button>
@@ -261,11 +269,14 @@ window.prodGuardar = async function (id) {
   };
   try {
     if (id) {
+      // El PPP es editable en la ficha (corrección manual); si se deja vacío, se conserva el costo.
+      data.costoPromedio = document.getElementById("p-ppp") && document.getElementById("p-ppp").value !== "" ? gn("p-ppp") : gn("p-costo");
       await updateDoc(docE("productos", id), data);
       closeGenModal();
       toast("Producto guardado", codigoInterno, "success");
     } else {
       data.stock = gn("p-stock0");
+      data.costoPromedio = gn("p-costo"); // PPP inicial = costo neto de referencia
       data.createdAt = serverTimestamp();
       await addDoc(colE("productos"), data);
       closeGenModal();

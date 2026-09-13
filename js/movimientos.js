@@ -4,7 +4,7 @@ import {
   collection, doc, onSnapshot, serverTimestamp, query, writeBatch, increment
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { showModal, closeGenModal, confirmDialog, toast, escapeHtml, fmtNum, fmtMon, fmtFecha, nextFolio, attachProductoSearch } from "./inv-helpers.js";
-import { getProductos, getProducto, crearProductoDesdeExterno } from "./productos.js";
+import { getProductos, getProducto, crearProductoDesdeExterno, pppDe } from "./productos.js";
 import { getBodegas, bodegaNombre } from "./bodegas.js";
 
 // ================= MOVIMIENTOS DE INVENTARIO (criterio SCI) =================
@@ -369,9 +369,12 @@ function aplicarProductoALinea(i, codigo, reRenderFull) {
   const p = getProducto(codigo);
   if (p) {
     if (!draft.lineas[i].descripcion) draft.lineas[i].descripcion = p.descripcion || "";
-    // Precarga el costo con el costo de referencia del producto (si está vacío)
+    // Precarga el costo: en salidas usa el costo promedio (PPP); en entradas, la última compra.
     const costoVacio = draft.lineas[i].costo == null || draft.lineas[i].costo === "";
-    if (costoVacio && p.costo) draft.lineas[i].costo = p.costo;
+    if (costoVacio) {
+      const ref = draft.clase === "SAL" ? pppDe(p) : (Number(p.costo) || pppDe(p));
+      if (ref) draft.lineas[i].costo = ref;
+    }
   }
   if (reRenderFull) renderEditor(); else renderLineas();
 }
@@ -527,9 +530,27 @@ window.movGuardar = async function () {
       batch.set(ref, { numero, ...reg, createdAt: serverTimestamp(), _mod: Date.now() });
     }
     aplicarNet(batch, net);
-    // En compras, actualiza el costo de referencia del producto al último costo de compra.
-    if (draft.movTipo === "COMPRA") {
-      lineas.forEach((l) => { if (l.costo > 0) { const p = getProducto(l.codigoInterno); if (p && p.id) batch.update(docE("productos", p.id), { costo: l.costo }); } });
+    // Costo promedio ponderado (PPP): se recalcula solo al CREAR una entrada.
+    // nuevoPPP = (stockAntes*pppAntes + cantEntra*costoEntra) / (stockAntes+cantEntra)
+    if (!draft.editId && draft.clase === "ENT" && draft.movTipo !== "TRASPASO") {
+      const grupos = {};
+      lineas.forEach((l) => {
+        const p = getProducto(l.codigoInterno);
+        if (!p || !p.id || p.controlStock === false) return;
+        const g = grupos[p.id] || (grupos[p.id] = { qty: 0, val: 0, p });
+        g.qty += l.cantidad; g.val += l.cantidad * (l.costo || 0);
+      });
+      Object.values(grupos).forEach(({ qty, val, p }) => {
+        if (qty <= 0) return;
+        const stockAntes = Number(p.stock) || 0;
+        const pppAntes = pppDe(p);
+        const costoEntrada = val > 0 ? val / qty : pppAntes; // sin costo => no diluye el PPP
+        const stockDespues = stockAntes + qty;
+        const nuevoPPP = stockDespues > 0 ? (stockAntes * pppAntes + qty * costoEntrada) / stockDespues : costoEntrada;
+        const upd = { costoPromedio: Math.round(nuevoPPP * 100) / 100 };
+        if (draft.movTipo === "COMPRA" && val > 0) upd.costo = Math.round(costoEntrada * 100) / 100; // último costo de compra
+        batch.update(docE("productos", p.id), upd);
+      });
     }
     await batch.commit();
     toast(draft.editId ? "Movimiento actualizado" : "Movimiento registrado", cfg.label, "success");
