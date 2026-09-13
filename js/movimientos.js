@@ -122,7 +122,8 @@ function renderLineas() {
       </tr>`;
     }).join("")}</tbody></table>`;
   draft.lineas.forEach((l, i) => {
-    attachProductoSearch("mov-prod-" + i, getProductos,
+    // Solo productos con control de stock (los servicios no entran a inventario)
+    attachProductoSearch("mov-prod-" + i, () => getProductos().filter((p) => p.controlStock !== false),
       (cod) => { draft.lineas[i].codigoInterno = cod; renderLineas(); },
       { onCreate: (q) => { const esEAN = /^\d{8,14}$/.test(q || ""); crearProductoDesdeExterno(esEAN ? { codigoEAN: q } : { descripcion: q || "" }, (codigo) => { draft.lineas[i].codigoInterno = codigo; renderLineas(); }); } });
   });
@@ -167,7 +168,7 @@ function computeUpdates(m) {
   const updates = {};
   const add = (cod, bodegaId, d) => {
     if (!bodegaId) return;
-    const p = getProducto(cod); if (!p || !p.id) return;
+    const p = getProducto(cod); if (!p || !p.id || p.controlStock === false) return;
     updates[p.id] = updates[p.id] || { __total: 0 };
     const k = "stockPorBodega." + bodegaId;
     updates[p.id][k] = (updates[p.id][k] || 0) + d;

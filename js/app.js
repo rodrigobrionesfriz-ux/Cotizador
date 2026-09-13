@@ -8,7 +8,6 @@ const sidebarBackdrop = document.getElementById("sidebar-backdrop");
 const titles = {
   dashboard: "Resumen",
   clientes: "Clientes",
-  catalogo: "Catálogo",
   cotizaciones: "Cotizaciones",
   obras: "Obras",
   facturacion: "Facturación",

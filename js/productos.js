@@ -29,6 +29,7 @@ window.addEventListener("empresa-ready", () => {
 }, { once: true });
 
 function esBajoStock(p) {
+  if (p.controlStock === false) return false;
   const min = Number(p.stockMinimo) || 0;
   return min > 0 && (Number(p.stock) || 0) <= min;
 }
@@ -69,19 +70,21 @@ function render() {
 function rowHtml(p) {
   const activo = p.activo !== false;
   const bajo = esBajoStock(p);
+  const servicio = p.controlStock === false;
   return `<tr style="cursor:pointer" onclick="prodVer('${p.id}')">
     <td class="cell-mono"><strong>${escapeHtml(p.codigoInterno || "")}</strong></td>
-    <td>${escapeHtml(p.descripcion || "")}${p.aplicaIVA === false ? ' <span class="muted">· EXENTO</span>' : ""}</td>
+    <td>${escapeHtml(p.descripcion || "")}${servicio ? ' <span class="badge badge-enviada" style="font-size:9px">Servicio</span>' : ""}${p.aplicaIVA === false ? ' <span class="muted">· EXENTO</span>' : ""}</td>
     <td>${escapeHtml(p.unidadMedida || "-")}</td>
     <td>${escapeHtml(p.grupo || "-")}</td>
-    <td class="col-num cell-mono" style="${bajo ? "color:var(--red);font-weight:700" : ""}">${fmtNum(p.stock || 0, 2)}</td>
-    <td class="col-num cell-mono">${p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-"}</td>
+    <td class="col-num cell-mono" style="${bajo ? "color:var(--red);font-weight:700" : ""}">${servicio ? "—" : fmtNum(p.stock || 0, 2)}</td>
+    <td class="col-num cell-mono">${servicio ? "—" : (p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-")}</td>
     <td>${activo ? '<span class="badge badge-activo">Activo</span>' : '<span class="badge badge-inactivo">Inactivo</span>'}</td>
     <td class="row-actions" onclick="event.stopPropagation()"><button onclick="prodEditar('${p.id}')">Editar</button></td>
   </tr>`;
 }
 
 function stockPorBodegaHtml(p) {
+  if (p.controlStock === false) return "";
   const spb = p.stockPorBodega || {};
   const entries = Object.entries(spb).filter(([, v]) => (Number(v) || 0) !== 0);
   if (!getBodegas().length && !entries.length) return "";
@@ -116,12 +119,16 @@ function formHtml(p, esNuevo) {
       <label>Grupo / familia<input type="text" id="p-grupo" value="${escapeHtml(p.grupo || "")}"></label>
     </div>
     <div class="form-row">
-      <label>Stock mínimo<input type="number" min="0" step="any" id="p-min" value="${p.stockMinimo != null ? p.stockMinimo : ""}"></label>
-      <label>Costo neto referencia<input type="number" min="0" step="1" id="p-costo" value="${p.costo != null ? p.costo : ""}"></label>
+      <label>Costo neto<input type="number" min="0" step="1" id="p-costo" value="${p.costo != null ? p.costo : ""}"></label>
+      <label>Precio de venta neto<input type="number" min="0" step="1" id="p-precio" value="${p.precio != null ? p.precio : ""}"><div class="muted" style="font-size:11px">Se usa en las cotizaciones</div></label>
     </div>
     <div class="form-row">
-      ${esNuevo ? `<label>Stock inicial<input type="number" min="0" step="any" id="p-stock0" value="0"></label>` : `<label>Stock actual<input type="text" value="${fmtNum(p.stock || 0, 2)}" readonly><div class="muted" style="font-size:11px">Se ajusta desde Movimientos</div></label>`}
+      <label class="checkbox-label"><input type="checkbox" id="p-control" ${p.controlStock !== false ? "checked" : ""} onchange="document.getElementById('p-stock-row').style.display=this.checked?'':'none'"> Controla stock</label>
       <label class="checkbox-label"><input type="checkbox" id="p-iva" ${p.aplicaIVA !== false ? "checked" : ""}> Afecto a IVA</label>
+    </div>
+    <div class="form-row" id="p-stock-row" style="${p.controlStock === false ? "display:none" : ""}">
+      <label>Stock mínimo<input type="number" min="0" step="any" id="p-min" value="${p.stockMinimo != null ? p.stockMinimo : ""}"></label>
+      ${esNuevo ? `<label>Stock inicial<input type="number" min="0" step="any" id="p-stock0" value="0"></label>` : `<label>Stock actual<input type="text" value="${fmtNum(p.stock || 0, 2)}" readonly><div class="muted" style="font-size:11px">Se ajusta desde Movimientos</div></label>`}
     </div>
     <div class="form-row">
       <label>Estado<select id="p-activo"><option value="si"${p.activo !== false ? " selected" : ""}>Activo</option><option value="no"${p.activo === false ? " selected" : ""}>Inactivo</option></select></label>
@@ -148,8 +155,9 @@ window.prodVer = function (id) {
     <div class="form-row"><label>Código<div>${escapeHtml(p.codigoInterno || "")}</div></label><label>EAN<div>${escapeHtml(p.codigoEAN || "-")}</div></label></div>
     <div class="form-row form-row-full"><label>Descripción<div><strong>${escapeHtml(p.descripcion || "")}</strong></div></label></div>
     <div class="form-row"><label>Unidad<div>${escapeHtml(p.unidadMedida || "-")}</div></label><label>Grupo<div>${escapeHtml(p.grupo || "-")}</div></label></div>
-    <div class="form-row"><label>Stock actual<div class="cell-mono"><strong>${fmtNum(p.stock || 0, 2)}</strong></div></label><label>Stock mínimo<div class="cell-mono">${p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-"}</div></label></div>
-    <div class="form-row"><label>Costo referencia<div>${p.costo ? fmtMon(p.costo) : "-"}</div></label><label>IVA<div>${p.aplicaIVA === false ? "Exento" : "Afecto"}</div></label></div>
+    <div class="form-row"><label>Stock actual<div class="cell-mono"><strong>${p.controlStock === false ? "Servicio (sin stock)" : fmtNum(p.stock || 0, 2)}</strong></div></label><label>Stock mínimo<div class="cell-mono">${p.controlStock === false ? "—" : (p.stockMinimo ? fmtNum(p.stockMinimo, 2) : "-")}</div></label></div>
+    <div class="form-row"><label>Costo neto<div>${p.costo ? fmtMon(p.costo) : "-"}</div></label><label>Precio venta<div>${p.precio ? fmtMon(p.precio) : "-"}</div></label></div>
+    <div class="form-row"><label>IVA<div>${p.aplicaIVA === false ? "Exento" : "Afecto"}</div></label><span></span></div>
     ${stockPorBodegaHtml(p)}`,
     `<button class="btn btn-ghost" onclick="closeGenModal()">Cerrar</button>
      <button class="btn btn-primary" onclick="prodEditar('${id}')">Editar</button>`);
@@ -165,10 +173,12 @@ window.prodGuardar = async function (id) {
   const dup = productos.find((p) => p.codigoInterno === codigoInterno && p.id !== id);
   if (dup) { toast("Código repetido", "Ya existe un producto con ese código", "error"); return; }
 
+  const controlStock = document.getElementById("p-control") ? document.getElementById("p-control").checked : true;
   const data = {
     codigoInterno, descripcion,
     codigoEAN: g("p-ean"), unidadMedida: g("p-um"), grupo: g("p-grupo"),
-    stockMinimo: gn("p-min"), costo: gn("p-costo"),
+    stockMinimo: controlStock ? gn("p-min") : 0, costo: gn("p-costo"), precio: gn("p-precio"),
+    controlStock,
     aplicaIVA: document.getElementById("p-iva") ? document.getElementById("p-iva").checked : true,
     activo: g("p-activo") !== "no"
   };

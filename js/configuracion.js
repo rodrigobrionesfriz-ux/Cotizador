@@ -3,6 +3,7 @@ import { colE, docE } from "./tenant.js";
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
   onSnapshot,
   collection,
@@ -346,28 +347,76 @@ document.getElementById("btn-import-catalogo").addEventListener("click", async (
       if (!codigo || !descripcion) { omitidos++; return; }
 
       const estadoTexto = normalizarTexto(mapa.estado ? fila[mapa.estado] : "");
-      const categoria = mapearCategoria(mapa.categoria ? fila[mapa.categoria] : "");
+      const categoria = mapa.categoria ? String(fila[mapa.categoria] || "").trim() : "";
+      // Importa como PRODUCTO (colección productos = inventario, fuente única)
       documentos.push({
-        codigo,
+        codigoInterno: codigo,
         descripcion,
-        categoria,
-        subcategoria: categoria === "mano_obra" ? mapearSubcategoria(mapa.subcategoria ? fila[mapa.subcategoria] : "") : "",
-        unidad: mapa.unidad ? String(fila[mapa.unidad] || "UN").trim() : "UN",
-        proveedor: mapa.proveedor ? String(fila[mapa.proveedor] || "").trim() : "",
+        grupo: categoria,
+        codigoEAN: "",
+        unidadMedida: mapa.unidad ? String(fila[mapa.unidad] || "UN").trim() : "UN",
         costo: mapa.costo ? Number(fila[mapa.costo]) || 0 : 0,
         precio: mapa.precio ? Number(fila[mapa.precio]) || 0 : 0,
-        afectoIva: mapearAfectoIva(mapa.afectoIva ? fila[mapa.afectoIva] : ""),
-        estado: estadoTexto.includes("inactiv") ? "inactivo" : "activo"
+        aplicaIVA: mapearAfectoIva(mapa.afectoIva ? fila[mapa.afectoIva] : ""),
+        stock: 0, stockMinimo: 0,
+        activo: !estadoTexto.includes("inactiv")
       });
       importados++;
     });
 
-    log.textContent = `Importando ${importados} ítems…`;
-    await guardarEnLotes("catalogo", documentos);
-    log.textContent = `Listo: ${importados} ítems importados. ${omitidos > 0 ? omitidos + " filas omitidas (sin código o descripción)." : ""}`;
+    log.textContent = `Importando ${importados} productos…`;
+    await guardarEnLotes("productos", documentos);
+    log.textContent = `Listo: ${importados} productos importados. ${omitidos > 0 ? omitidos + " filas omitidas (sin código o descripción)." : ""}`;
     fileInput.value = "";
   } catch (err) {
     console.error("Error importando catálogo:", err);
     log.textContent = "Ocurrió un error leyendo el archivo. Revisa que sea un .xlsx, .xls o .csv válido.";
   }
 });
+
+// ---------- Migración: catálogo antiguo (catalogo) -> Inventario (productos) ----------
+const btnMigrar = document.getElementById("btn-migrar-catalogo");
+if (btnMigrar) {
+  btnMigrar.addEventListener("click", async () => {
+    const log = document.getElementById("migrar-catalogo-log");
+    if (!confirm("¿Migrar los productos del catálogo antiguo al Inventario? No se duplican los que ya existan.")) return;
+    log.textContent = "Leyendo catálogo antiguo…";
+    try {
+      const [catSnap, prodSnap] = await Promise.all([getDocs(colE("catalogo")), getDocs(colE("productos"))]);
+      const existentes = new Set(prodSnap.docs.map((d) => String((d.data().codigoInterno || "")).trim()).filter(Boolean));
+      const documentos = [];
+      let omitidos = 0;
+      catSnap.docs.forEach((d) => {
+        const c = d.data();
+        const codigo = String(c.codigo || "").trim();
+        const descripcion = String(c.descripcion || "").trim();
+        if (!codigo || !descripcion) { omitidos++; return; }
+        if (existentes.has(codigo)) { omitidos++; return; } // ya existe en inventario
+        const cat = String(c.categoria || "").toLowerCase();
+        const esServicio = cat.includes("mano") || cat.includes("servicio");
+        documentos.push({
+          codigoInterno: codigo,
+          descripcion,
+          grupo: c.categoria || "",
+          codigoEAN: "",
+          unidadMedida: c.unidad || "UN",
+          costo: Number(c.costo) || 0,
+          precio: Number(c.precio) || 0,
+          aplicaIVA: c.afectoIva !== false,
+          controlStock: !esServicio,
+          stock: 0,
+          stockMinimo: 0,
+          activo: c.estado !== "inactivo"
+        });
+        existentes.add(codigo);
+      });
+      if (!documentos.length) { log.textContent = `No hay nada que migrar. ${omitidos > 0 ? omitidos + " omitidos (ya existían o sin datos)." : "El catálogo antiguo está vacío."}`; return; }
+      log.textContent = `Migrando ${documentos.length} productos…`;
+      await guardarEnLotes("productos", documentos);
+      log.textContent = `Listo: ${documentos.length} productos migrados al Inventario. ${omitidos > 0 ? omitidos + " omitidos (ya existían o sin datos)." : ""}`;
+    } catch (err) {
+      console.error("Error migrando catálogo:", err);
+      log.textContent = "Ocurrió un error durante la migración. Revisa la consola.";
+    }
+  });
+}

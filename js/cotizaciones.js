@@ -1,7 +1,7 @@
 import { db } from "./firebase-config.js";
 import { colE, docE } from "./tenant.js";
 import { abrirNuevoClienteDesdeExterno } from "./clientes.js";
-import { abrirNuevoItemDesdeExterno } from "./catalogo.js";
+import { crearProductoDesdeExterno, getProducto } from "./productos.js";
 import { construirHtmlCotizacion } from "./plantilla.js";
 import {
   collection,
@@ -113,11 +113,22 @@ window.addEventListener("empresa-ready", () => {
       .filter((c) => c.estado !== "inactivo");
   }, (err) => console.error("Error leyendo clientes:", err));
 
-  onSnapshot(colE("catalogo"), (snap) => {
+  // Los productos de la cotización son los mismos del Inventario (colección productos)
+  onSnapshot(colE("productos"), (snap) => {
     catalogoActivo = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((it) => it.estado !== "inactivo");
-  }, (err) => console.error("Error leyendo catálogo:", err));
+      .filter((it) => it.activo !== false)
+      // Normaliza al formato que usa el editor de cotización
+      .map((p) => ({
+        id: p.id,
+        codigo: p.codigoInterno || "",
+        descripcion: p.descripcion || "",
+        unidad: p.unidadMedida || "",
+        precio: p.precio || 0,
+        costo: p.costo || 0,
+        afectoIva: p.aplicaIVA !== false
+      }));
+  }, (err) => console.error("Error leyendo productos:", err));
 
   onSnapshot(docE("configuracion", "empresa"), (snap) => {
     empresaInfo = snap.exists() ? snap.data() : {};
@@ -182,40 +193,42 @@ const comboItem = crearCombobox({
   renderEtiqueta: (it) => `${it.codigo} — ${it.descripcion}`
 });
 
-// ---------- Creación rápida de cliente/ítem desde la cotización ----------
+// ---------- Creación rápida de cliente/producto desde la cotización ----------
 let esperandoNuevoCliente = false;
-let esperandoNuevoItem = false;
 
 btnNuevoClienteInline.addEventListener("click", () => {
   esperandoNuevoCliente = true;
   abrirNuevoClienteDesdeExterno();
 });
 
+// Crea el producto en el Inventario (colección productos) y lo agrega a la cotización
 btnNuevoItemInline.addEventListener("click", () => {
-  esperandoNuevoItem = true;
-  abrirNuevoItemDesdeExterno();
+  crearProductoDesdeExterno({}, (codigoInterno) => agregarProductoPorCodigo(codigoInterno));
 });
+
+function agregarProductoPorCodigo(codigoInterno, intentos) {
+  const p = getProducto(codigoInterno);
+  if (!p) {
+    if ((intentos || 0) < 12) setTimeout(() => agregarProductoPorCodigo(codigoInterno, (intentos || 0) + 1), 200);
+    return;
+  }
+  lineaItems.push({
+    itemId: p.id,
+    codigo: p.codigoInterno,
+    descripcion: p.descripcion,
+    unidad: p.unidadMedida,
+    cantidad: 1,
+    precio: p.precio || 0,
+    costo: p.costo || 0,
+    descuentoItem: 0
+  });
+  renderItems();
+}
 
 window.addEventListener("cliente-guardado", (e) => {
   if (!esperandoNuevoCliente || !e.detail.esNuevo) return;
   esperandoNuevoCliente = false;
   comboCliente.setSeleccion({ id: e.detail.id, razonSocial: e.detail.razonSocial, rut: e.detail.rut });
-});
-
-window.addEventListener("item-guardado", (e) => {
-  if (!esperandoNuevoItem || !e.detail.esNuevo) return;
-  esperandoNuevoItem = false;
-  lineaItems.push({
-    itemId: e.detail.id,
-    codigo: e.detail.codigo,
-    descripcion: e.detail.descripcion,
-    unidad: e.detail.unidad,
-    cantidad: 1,
-    precio: e.detail.precio || 0,
-    costo: e.detail.costo || 0,
-    descuentoItem: 0
-  });
-  renderItems();
 });
 
 let obrasDisponibles = [];

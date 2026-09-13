@@ -172,10 +172,7 @@ function renderLineas() {
       const c = calcLinea(l);
       const p = l.codigoInterno ? getProducto(l.codigoInterno) : null;
       return `<tr>
-        <td>
-          <input type="text" class="cell-mono" style="width:100%" id="oc-prod-${i}" value="${escapeHtml(l.codigoInterno || "")}" placeholder="🔍 Código o descripción" autocomplete="off">
-          ${p ? `<div class="muted" style="font-size:10.5px">${p.controlStock === false ? "servicio (sin stock)" : "stock: " + fmtNum(p.stock || 0, 2) + " " + escapeHtml(p.unidadMedida || "")}</div>` : ""}
-        </td>
+        <td><input type="text" class="cell-mono" style="width:100%" id="oc-prod-${i}" value="${escapeHtml(l.codigoInterno || "")}" placeholder="🔍 Código o descripción" autocomplete="off"></td>
         <td><input type="text" style="width:100%" value="${escapeHtml(l.descripcion || "")}" onchange="ocUpd(${i},'descripcion',this.value)">${p ? `<div class="muted" style="font-size:10.5px">${escapeHtml(p.unidadMedida || "")}${c.afecto ? "" : " · EXENTO"}</div>` : ""}</td>
         <td><select style="width:100%" onchange="ocUpd(${i},'cc',this.value)">${ccOptions(l.cc || "")}</select></td>
         <td class="col-num"><input type="number" min="0" step="any" style="width:100%;text-align:right" value="${l.cantidad != null ? l.cantidad : ""}" oninput="ocUpd(${i},'cantidad',this.value)"></td>
@@ -233,24 +230,23 @@ window.ocSetCCDefault = function (cod) {
 window.ocAddLinea = function () { capturarHeader(); draft.lineas.push({ cc: draft.ccDefault || "" }); renderLineas(); };
 window.ocRemoveLinea = function (i) { draft.lineas.splice(i, 1); if (!draft.lineas.length) draft.lineas.push({ cc: draft.ccDefault || "" }); renderLineas(); };
 window.ocUpd = function (i, k, v) { draft.lineas[i][k] = v; if (k === "cantidad" || k === "precio" || k === "otros") recalc(); };
-function aplicarProductoALinea(i, codigo) {
-  draft.lineas[i].codigoInterno = codigo;
-  const p = getProducto(codigo);
-  if (p) draft.lineas[i].descripcion = p.descripcion || "";
-  // Precarga el precio de compra con el costo de referencia del producto (si está vacío)
-  const precioVacio = draft.lineas[i].precio == null || draft.lineas[i].precio === "";
-  if (precioVacio && p && p.costo) draft.lineas[i].precio = p.costo;
-  if (!draft.lineas[i].cc) draft.lineas[i].cc = draft.ccDefault || "";
-  renderLineas();
-}
 window.ocSetProd = function (i, cod, prefillDesc) {
   if (cod === "__new__") {
     capturarHeader();
     const esEAN = /^\d{8,14}$/.test(prefillDesc || "");
-    crearProductoDesdeExterno(esEAN ? { codigoEAN: prefillDesc } : { descripcion: prefillDesc || "" }, (codigo) => aplicarProductoALinea(i, codigo));
+    crearProductoDesdeExterno(esEAN ? { codigoEAN: prefillDesc } : { descripcion: prefillDesc || "" }, (codigo) => {
+      draft.lineas[i].codigoInterno = codigo;
+      const p = getProducto(codigo); if (p) draft.lineas[i].descripcion = p.descripcion || "";
+      if (!draft.lineas[i].cc) draft.lineas[i].cc = draft.ccDefault || "";
+      renderLineas();
+    });
     return;
   }
-  aplicarProductoALinea(i, cod);
+  draft.lineas[i].codigoInterno = cod;
+  const p = getProducto(cod);
+  if (p) draft.lineas[i].descripcion = p.descripcion || "";
+  if (!draft.lineas[i].cc) draft.lineas[i].cc = draft.ccDefault || "";
+  renderLineas();
 };
 
 window.ocGuardar = async function () {
