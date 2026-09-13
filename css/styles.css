@@ -573,6 +573,19 @@ html.no-scroll, body.no-scroll {
   gap: 6px;
 }
 
+/* Tarjetas de sección del editor de movimientos (formato SCI) */
+.editor-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: #fff;
+}
+.editor-card .editor-grid { margin-bottom: 0; }
+.editor-span2 { grid-column: 1 / -1; }
+.btn-success { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-success:hover { filter: brightness(0.95); }
+
 .section-label {
   font-family: var(--font-display);
   font-size: 14px;
