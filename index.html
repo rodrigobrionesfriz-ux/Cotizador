@@ -2,11 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cotizaciones · Electricidad y Obras Civiles</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Control Inventario y Cotizaciones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1F2A38">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inv y Cotiz">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 </head>
 <body>
 
@@ -14,7 +23,7 @@
 <div id="login-screen" class="login-screen">
   <div class="login-card">
     <div class="login-mark" id="login-mark">⌁</div>
-    <h1 id="login-title">SISTEMA DE COTIZACIONES</h1>
+    <h1 id="login-title">CONTROL INVENTARIO Y COTIZACIONES</h1>
     <p class="login-sub" id="login-sub">EMPRESA NO CONFIGURADA</p>
     <form id="login-form">
       <label>CORREO
@@ -26,7 +35,7 @@
       <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
       <p id="login-error" class="login-error"></p>
     </form>
-    <p class="login-footer">Cotizador Eléctrico y Obras Civiles · Desarrollado por Rodrigo Briones Friz / Claude AI</p>
+    <p class="login-footer">Control Inventario y Cotizaciones · Desarrollado por Rodrigo Briones Friz / Claude AI</p>
   </div>
 </div>
 
@@ -56,7 +65,7 @@
     <div class="brand">
       <span class="brand-mark" id="brand-mark">⌁</span>
       <div>
-        <div class="brand-title">COTIZACIONES</div>
+        <div class="brand-title">INVENTARIO Y COTIZ.</div>
         <div class="brand-sub" id="sidebar-brand-sub">Empresa no configurada</div>
       </div>
     </div>
@@ -114,6 +123,7 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button id="btn-install" class="btn btn-primary btn-small hidden" style="width:100%;margin-bottom:8px">⬇️ Instalar app</button>
       <div id="user-email" class="user-email"></div>
       <button id="logout-btn" class="link-btn">Cerrar sesión</button>
     </div>
@@ -934,5 +944,31 @@
 <script type="module" src="js/productos.js"></script>
 <script type="module" src="js/movimientos.js"></script>
 <script type="module" src="js/ordenes-compra.js"></script>
+
+<!-- Registro del Service Worker + botón de instalación (PWA) -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch((e) => console.warn("SW no registrado:", e));
+    });
+  }
+  let deferredPrompt = null;
+  const btnInstall = document.getElementById("btn-install");
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btnInstall) btnInstall.classList.remove("hidden");
+  });
+  if (btnInstall) {
+    btnInstall.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      btnInstall.classList.add("hidden");
+    });
+  }
+  window.addEventListener("appinstalled", () => { if (btnInstall) btnInstall.classList.add("hidden"); });
+</script>
 </body>
 </html>

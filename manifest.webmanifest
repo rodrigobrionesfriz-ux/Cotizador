@@ -1,0 +1,17 @@
+{
+  "name": "Control Inventario y Cotizaciones",
+  "short_name": "Inv y Cotiz",
+  "description": "Control de inventario, cotizaciones, ordenes de compra y facturacion para electricidad y obras civiles.",
+  "lang": "es-CL",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1F2A38",
+  "theme_color": "#1F2A38",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
