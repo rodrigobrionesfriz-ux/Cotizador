@@ -81,17 +81,11 @@
       <button class="nav-item" data-view="ordenes-compra">
         <span class="nav-icon">🧾</span> Órdenes de compra
       </button>
-      <button class="nav-item" data-view="proveedores">
-        <span class="nav-icon">◨</span> Proveedores
-      </button>
       <button class="nav-item" data-view="centros-costo">
         <span class="nav-icon">◔</span> Centros de costo
       </button>
 
       <div class="nav-section-label">Cotizaciones</div>
-      <button class="nav-item" data-view="clientes">
-        <span class="nav-icon">◧</span> Clientes
-      </button>
       <button class="nav-item" data-view="cotizaciones">
         <span class="nav-icon">▥</span> Cotizaciones
       </button>
@@ -108,6 +102,14 @@
       </button>
       <button class="nav-item hidden" id="nav-admin" data-view="admin">
         <span class="nav-icon">☰</span> Administración
+      </button>
+
+      <div class="nav-section-label">Auxiliares</div>
+      <button class="nav-item" data-view="clientes">
+        <span class="nav-icon">◧</span> Clientes
+      </button>
+      <button class="nav-item" data-view="proveedores">
+        <span class="nav-icon">◨</span> Proveedores
       </button>
     </nav>
 
@@ -417,7 +419,10 @@
     <section id="view-productos" class="view"></section>
 
     <!-- MOVIMIENTOS -->
-    <section id="view-movimientos" class="view"></section>
+    <section id="view-movimientos" class="view">
+      <div id="mov-lista"></div>
+      <div id="mov-editor" class="hidden"></div>
+    </section>
 
     <!-- BODEGAS -->
     <section id="view-bodegas" class="view"></section>
